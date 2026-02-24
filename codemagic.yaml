@@ -1,17 +1,16 @@
 workflows:
   android-workflow:
     name: Android Build
+    max_build_duration: 60
     environment:
-      vars:
-        PACKAGE_NAME: "com.tunegocio.app"
-      android_signing:
-        - keystore_reference
       groups:
         - google_play
-      android:
-        build_tools_version: "34.0.0"
-        api_level: 34
+      vars:
+        PACKAGE_NAME: "com.tunegocio.app"
     scripts:
-      - ./gradlew assembleRelease
+      - name: Build APK
+        script: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
     artifacts:
       - app/build/outputs/**/*.apk
