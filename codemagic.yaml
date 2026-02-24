@@ -1,27 +1,21 @@
 workflows:
   android-workflow:
-    name: Android Build
+    name: Android Debug Build
     max_build_duration: 60
 
     environment:
-      groups:
-        - google_play
+      vars:
+        JAVA_HOME: /Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
 
     scripts:
-      - name: Install Gradle
-        script: |
-          curl -s https://get.sdkman.io | bash
-          source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle 8.4
-
       - name: Generate Wrapper
         script: |
           gradle wrapper --gradle-version 8.4
 
-      - name: Build APK
+      - name: Build Debug APK
         script: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
     artifacts:
       - app/build/outputs/**/*.apk
