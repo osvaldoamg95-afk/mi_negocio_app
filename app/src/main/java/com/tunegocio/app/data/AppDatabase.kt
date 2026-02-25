@@ -7,18 +7,28 @@ import androidx.room.RoomDatabase
 
 import com.tunegocio.app.data.entities.Product
 import com.tunegocio.app.data.entities.InventoryLot
+import com.tunegocio.app.data.entities.Sale
+import com.tunegocio.app.data.entities.SaleDetail
+
 import com.tunegocio.app.data.dao.ProductDao
 import com.tunegocio.app.data.dao.InventoryLotDao
+import com.tunegocio.app.data.dao.SaleDao
 
 @Database(
-    entities = [Product::class, InventoryLot::class],
-    version = 1,
+    entities = [
+        Product::class,
+        InventoryLot::class,
+        Sale::class,
+        SaleDetail::class
+    ],
+    version = 2, // 🔥 Subimos versión
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
     abstract fun inventoryLotDao(): InventoryLotDao
+    abstract fun saleDao(): SaleDao  // ✅ Nuevo DAO
 
     companion object {
 
@@ -33,7 +43,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "mi_negocio_db"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() // ✅ Evita crash por cambio versión
+                .build()
 
                 INSTANCE = instance
                 instance
