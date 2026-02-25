@@ -21,7 +21,7 @@ import com.tunegocio.app.data.dao.SaleDao
         Sale::class,
         SaleDetail::class
     ],
-    version = 2, // 🔥 Subimos versión
+    version = 3, // 🔥 Subimos versión
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
