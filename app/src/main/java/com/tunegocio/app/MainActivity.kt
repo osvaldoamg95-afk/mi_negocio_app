@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.tunegocio.app.databinding.ActivityMainBinding
 import com.tunegocio.app.ui.InventoryActivity
 import com.tunegocio.app.ui.SalesActivity
+import com.tunegocio.app.ui.ReportsActivity
+import android.content.Intent
 
 class MainActivity : AppCompatActivity() {
 
