@@ -8,5 +8,7 @@ data class Sale(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val date: Long,
-    val total: Double
+    val total: Double,
+    val costTotal: Double,
+    val profit: Double
 )
