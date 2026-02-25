@@ -18,6 +18,12 @@
         android:layout_height="wrap_content"
         android:text="Inventario"/>
 
+    <Button
+        android:id="@+id/btnReportes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Reportes"/>
+    
     <TextView
         android:id="@+id/txtResultado"
         android:layout_width="match_parent"
