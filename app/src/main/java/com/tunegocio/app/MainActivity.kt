@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.tunegocio.app.databinding.ActivityMainBinding
 import com.tunegocio.app.ui.InventoryActivity
+import com.tunegocio.app.ui.SalesActivity
+import android.content.Intent
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,7 +23,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnVentas.setOnClickListener {
-            binding.txtResultado.text = "Módulo ventas próximamente"
+    startActivity(Intent(this, SalesActivity::class.java))
+}
         }
     }
 }
