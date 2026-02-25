@@ -44,8 +44,6 @@ class PurchaseActivity : AppCompatActivity() {
 
                     binding.etQuantity.setText("")
                     binding.etPurchasePrice.setText("")
-
-                    binding.txtStatus.text = "Compra registrada"
                 }
             }
         }
