@@ -27,6 +27,10 @@
 <activity
     android:name=".ui.SalesActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.ReportsActivity"
+    android:exported="false"/>
         
     </application>
 
