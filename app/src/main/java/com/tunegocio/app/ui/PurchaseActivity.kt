@@ -22,7 +22,7 @@ class PurchaseActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
-        loadProducts()
+        loadFirstProduct()
 
         binding.btnSavePurchase.setOnClickListener {
 
@@ -45,13 +45,13 @@ class PurchaseActivity : AppCompatActivity() {
                     binding.etQuantity.setText("")
                     binding.etPurchasePrice.setText("")
 
-                    binding.txtStatus.text = "Compra registrada ✅"
+                    binding.txtStatus.text = "Compra registrada"
                 }
             }
         }
     }
 
-    private fun loadProducts() {
+    private fun loadFirstProduct() {
 
         lifecycleScope.launch {
 
@@ -61,6 +61,7 @@ class PurchaseActivity : AppCompatActivity() {
 
                     val first = products.first()
                     selectedProductId = first.id
+
                     binding.txtSelectedProduct.text = "Producto: ${first.name}"
                 }
             }
