@@ -26,5 +26,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnVentas.setOnClickListener {
             startActivity(Intent(this, SalesActivity::class.java))
         }
+
+        // Ir a Reportes
+        binding.btnReportes.setOnClickListener {
+            startActivity(Intent(this, ReportsActivity::class.java))
+        }
     }
 }
