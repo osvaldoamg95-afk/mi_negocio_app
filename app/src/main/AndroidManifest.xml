@@ -19,6 +19,10 @@
 <activity
     android:name=".ui.InventoryActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.PurchaseActivity"
+    android:exported="false"/>
         
     </application>
 
