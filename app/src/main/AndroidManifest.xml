@@ -14,8 +14,12 @@
         <category android:name="android.intent.category.LAUNCHER" />
     </intent-filter>
 
-</activity>
+  </activity>          
 
+<activity
+    android:name=".ui.InventoryActivity"
+    android:exported="false"/>
+        
     </application>
 
 </manifest>
