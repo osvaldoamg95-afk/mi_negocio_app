@@ -53,15 +53,14 @@ class PurchaseActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
 
-            db.productDao().getAll().collect { products ->
+            val products = db.productDao().getAllList()
 
-                if (products.isNotEmpty()) {
+            if (products.isNotEmpty()) {
 
-                    val first = products.first()
-                    selectedProductId = first.id
+                val first = products.first()
+                selectedProductId = first.id
 
-                    binding.txtSelectedProduct.text = "Producto: ${first.name}"
-                }
+                binding.txtSelectedProduct.text = "Producto: ${first.name}"
             }
         }
     }
