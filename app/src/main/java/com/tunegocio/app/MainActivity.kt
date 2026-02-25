@@ -7,6 +7,8 @@ import kotlinx.coroutines.launch
 import com.tunegocio.app.databinding.ActivityMainBinding
 import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.data.entities.Product
+import android.content.Intent
+import com.tunegocio.app.ui.InventoryActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,7 +25,9 @@ class MainActivity : AppCompatActivity() {
         val db = AppDatabase.getDatabase(this)
 
         // Botón Inventario
-        binding.btnInventario.setOnClickListener {
+       binding.btnInventario.setOnClickListener {
+    startActivity(Intent(this, InventoryActivity::class.java))
+}
 
             lifecycleScope.launch {
 
