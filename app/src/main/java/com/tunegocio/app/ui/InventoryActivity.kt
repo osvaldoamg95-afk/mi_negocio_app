@@ -1,5 +1,6 @@
 package com.tunegocio.app.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +22,7 @@ class InventoryActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
+        // Guardar producto
         binding.btnSaveProduct.setOnClickListener {
 
             val name = binding.etProductName.text.toString()
@@ -43,6 +45,11 @@ class InventoryActivity : AppCompatActivity() {
                     loadProducts()
                 }
             }
+        }
+
+        // ✅ BOTÓN NUEVO PARA IR A COMPRAS
+        binding.btnOpenPurchase.setOnClickListener {
+            startActivity(Intent(this, PurchaseActivity::class.java))
         }
 
         loadProducts()
