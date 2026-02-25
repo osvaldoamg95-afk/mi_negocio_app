@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-
 import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.data.entities.InventoryLot
 import com.tunegocio.app.databinding.ActivityPurchaseBinding
@@ -52,17 +51,18 @@ class PurchaseActivity : AppCompatActivity() {
 
     private fun loadFirstProduct() {
 
-    lifecycleScope.launch {
+        lifecycleScope.launch {
 
-        val products = db.productDao().getAllList()
+            val products = db.productDao().getAllList()
 
-        if (products.isNotEmpty()) {
+            if (products.isNotEmpty()) {
 
-            val first = products[0]
-            selectedProductId = first.id
+                val first = products[0]
+                selectedProductId = first.id
 
-            val nameText = "Producto: " + first.name
-            binding.txtSelectedProduct.setText(nameText)
+                val nameText = "Producto: " + first.name
+                binding.txtSelectedProduct.setText(nameText)
+            }
         }
     }
 }
