@@ -23,6 +23,10 @@
 <activity
     android:name=".ui.PurchaseActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.SalesActivity"
+    android:exported="false"/>
         
     </application>
 
