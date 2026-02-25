@@ -15,4 +15,22 @@ interface SaleDao {
 
     @Query("SELECT * FROM sales ORDER BY date DESC")
     suspend fun getAllSales(): List<Sale>
+
+    @Query("""
+    SELECT SUM(total) FROM sales
+    WHERE date BETWEEN :startDate AND :endDate
+    """)
+    suspend fun getTotalSalesBetween(startDate: Long, endDate: Long): Double?
+
+    @Query("""
+    SELECT SUM(costTotal) FROM sales
+    WHERE date BETWEEN :startDate AND :endDate
+    """)
+    suspend fun getTotalCostBetween(startDate: Long, endDate: Long): Double?
+
+    @Query("""
+    SELECT SUM(profit) FROM sales
+    WHERE date BETWEEN :startDate AND :endDate
+    """)
+    suspend fun getTotalProfitBetween(startDate: Long, endDate: Long): Double?
 }
