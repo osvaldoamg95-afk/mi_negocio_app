@@ -34,7 +34,8 @@ class SalesActivity : AppCompatActivity() {
 
                 lifecycleScope.launch {
 
-                    val stock = db.inventoryLotDao().getTotalStock(selectedProductId) ?: 0.0
+                    val stock = db.inventoryLotDao()
+                        .getTotalStock(selectedProductId) ?: 0.0
 
                     if (stock < quantity) {
                         binding.txtStatus.text = "❌ Stock insuficiente"
@@ -43,17 +44,23 @@ class SalesActivity : AppCompatActivity() {
 
                     try {
 
-                        sellFIFO(selectedProductId, quantity)
+                        // ✅ Obtener costo real usando FIFO
+                        val cost = sellFIFO(selectedProductId, quantity)
 
                         val total = quantity * selectedProductPrice
+                        val profit = total - cost
 
+                        // ✅ Guardar venta
                         val saleId = db.saleDao().insertSale(
                             Sale(
                                 date = System.currentTimeMillis(),
-                                total = total
+                                total = total,
+                                costTotal = cost,
+                                profit = profit
                             )
                         )
 
+                        // ✅ Guardar detalle
                         db.saleDao().insertSaleDetail(
                             SaleDetail(
                                 saleId = saleId.toInt(),
@@ -63,7 +70,9 @@ class SalesActivity : AppCompatActivity() {
                             )
                         )
 
-                        binding.txtStatus.text = "✅ Venta registrada"
+                        binding.txtStatus.text =
+                            "✅ Venta registrada | Ganancia: $profit"
+
                         binding.etQuantity.setText("")
 
                     } catch (e: Exception) {
@@ -92,9 +101,14 @@ class SalesActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun sellFIFO(productId: Int, quantityToSell: Double) {
+    // ✅ FIFO que ahora devuelve el COSTO TOTAL
+    private suspend fun sellFIFO(
+        productId: Int,
+        quantityToSell: Double
+    ): Double {
 
         var remaining = quantityToSell
+        var totalCost = 0.0
 
         val lots = db.inventoryLotDao().getLotsFIFO(productId)
 
@@ -104,6 +118,7 @@ class SalesActivity : AppCompatActivity() {
 
             if (lot.quantity <= remaining) {
 
+                totalCost += lot.quantity * lot.purchasePrice
                 remaining -= lot.quantity
 
                 db.inventoryLotDao().updateLot(
@@ -111,6 +126,8 @@ class SalesActivity : AppCompatActivity() {
                 )
 
             } else {
+
+                totalCost += remaining * lot.purchasePrice
 
                 val newQuantity = lot.quantity - remaining
 
@@ -125,5 +142,7 @@ class SalesActivity : AppCompatActivity() {
         if (remaining > 0) {
             throw Exception("Stock insuficiente")
         }
+
+        return totalCost
     }
 }
