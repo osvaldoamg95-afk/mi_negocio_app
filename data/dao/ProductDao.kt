@@ -18,4 +18,8 @@ interface ProductDao {
 
     @Query("SELECT * FROM products ORDER BY name ASC")
     fun getAll(): Flow<List<Product>>
+
+    // ✅ NUEVA
+    @Query("SELECT * FROM products ORDER BY name ASC")
+    suspend fun getAllList(): List<Product>
 }
