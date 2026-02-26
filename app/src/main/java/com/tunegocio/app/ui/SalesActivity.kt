@@ -1,6 +1,9 @@
 package com.tunegocio.app.ui
 
 import android.os.Bundle
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -14,8 +17,20 @@ class SalesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySalesBinding
     private lateinit var db: AppDatabase
+
     private var selectedProductId: Int = -1
     private var selectedProductPrice: Double = 0.0
+    private var selectedProductName: String = ""
+
+    // ✅ Carrito
+    data class CartItem(
+        val productId: Int,
+        val productName: String,
+        val quantity: Double,
+        val price: Double
+    )
+
+    private val cart = mutableListOf<CartItem>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,124 +40,158 @@ class SalesActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
-        loadProduct()
+        loadProducts()
 
-        binding.btnSell.setOnClickListener {
+        // ✅ Agregar al carrito
+        binding.btnAddToCart.setOnClickListener {
 
             val quantity = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
 
             if (selectedProductId != -1 && quantity > 0) {
 
-                lifecycleScope.launch {
+                cart.add(
+                    CartItem(
+                        productId = selectedProductId,
+                        productName = selectedProductName,
+                        quantity = quantity,
+                        price = selectedProductPrice
+                    )
+                )
 
-                    // ✅ 1️⃣ VALIDAR SI EL DÍA ESTÁ CERRADO
-                    val calendar = Calendar.getInstance()
-                    calendar.set(Calendar.HOUR_OF_DAY, 0)
-                    calendar.set(Calendar.MINUTE, 0)
-                    calendar.set(Calendar.SECOND, 0)
-                    calendar.set(Calendar.MILLISECOND, 0)
+                binding.txtStatus.text = "🛒 ${selectedProductName} agregado"
+                binding.etQuantity.setText("")
+            }
+        }
 
-                    val startDay = calendar.timeInMillis
-                    calendar.add(Calendar.DAY_OF_MONTH, 1)
-                    val endDay = calendar.timeInMillis
+        // ✅ Cerrar venta completa
+        binding.btnSell.setOnClickListener {
 
-                    val isClosed = db.dailyCloseDao()
-                        .isClosed(startDay, endDay)
+            lifecycleScope.launch {
 
-                    if (isClosed > 0) {
-                        binding.txtStatus.text = "❌ El día está cerrado"
-                        return@launch
-                    }
+                if (cart.isEmpty()) {
+                    binding.txtStatus.text = "Carrito vacío"
+                    return@launch
+                }
 
-                    // ✅ 2️⃣ VALIDAR STOCK
+                // ✅ Validar cierre diario
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+
+                val startDay = calendar.timeInMillis
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+                val endDay = calendar.timeInMillis
+
+                val isClosed = db.dailyCloseDao()
+                    .isClosed(startDay, endDay)
+
+                if (isClosed > 0) {
+                    binding.txtStatus.text = "❌ El día está cerrado"
+                    return@launch
+                }
+
+                // ✅ Validar stock para todos los productos
+                for (item in cart) {
+
                     val stock = db.inventoryLotDao()
-                        .getTotalStock(selectedProductId) ?: 0.0
+                        .getTotalStock(item.productId) ?: 0.0
 
-                    if (stock < quantity) {
-                        binding.txtStatus.text = "❌ Stock insuficiente"
-                        return@launch
-                    }
-
-                    try {
-
-                        // ✅ 3️⃣ Obtener costo real usando FIFO
-                        val cost = sellFIFO(selectedProductId, quantity)
-
-                        val total = quantity * selectedProductPrice
-                        val profit = total - cost
-
-                        // ✅ 4️⃣ Guardar venta
-                        val saleId = db.saleDao().insertSale(
-                            Sale(
-                                date = System.currentTimeMillis(),
-                                total = total,
-                                costTotal = cost,
-                                profit = profit
-                            )
-                        )
-
-                        // ✅ 5️⃣ Guardar detalle
-                        db.saleDao().insertSaleDetail(
-                            SaleDetail(
-                                saleId = saleId.toInt(),
-                                productId = selectedProductId,
-                                quantity = quantity,
-                                salePrice = selectedProductPrice
-                            )
-                        )
-
+                    if (stock < item.quantity) {
                         binding.txtStatus.text =
-                            "✅ Venta registrada | Ganancia: %.2f"
-                                .format(profit)
-
-                        binding.etQuantity.setText("")
-
-                    } catch (e: Exception) {
-                        binding.txtStatus.text = "Error en venta"
+                            "❌ Stock insuficiente en ${item.productName}"
+                        return@launch
                     }
                 }
+
+                var totalVenta = 0.0
+                var totalCost = 0.0
+
+                // ✅ Procesar venta completa
+                for (item in cart) {
+
+                    val cost = sellFIFO(item.productId, item.quantity)
+                    totalCost += cost
+                    totalVenta += item.quantity * item.price
+                }
+
+                val profit = totalVenta - totalCost
+
+                val saleId = db.saleDao().insertSale(
+                    Sale(
+                        date = System.currentTimeMillis(),
+                        total = totalVenta,
+                        costTotal = totalCost,
+                        profit = profit
+                    )
+                )
+
+                // ✅ Guardar detalles
+                for (item in cart) {
+
+                    db.saleDao().insertSaleDetail(
+                        SaleDetail(
+                            saleId = saleId.toInt(),
+                            productId = item.productId,
+                            quantity = item.quantity,
+                            salePrice = item.price
+                        )
+                    )
+                }
+
+                cart.clear()
+
+                binding.txtStatus.text =
+                    "✅ Venta completa | Ganancia: %.2f"
+                        .format(profit)
             }
         }
     }
 
+    // ✅ Cargar productos en Spinner
     private fun loadProducts() {
 
-    lifecycleScope.launch {
+        lifecycleScope.launch {
 
-        val products = db.productDao().getAllList()
+            val products = db.productDao().getAllList()
 
-        if (products.isNotEmpty()) {
+            if (products.isNotEmpty()) {
 
-            val adapter = android.widget.ArrayAdapter(
-                this@SalesActivity,
-                android.R.layout.simple_spinner_item,
-                products.map { it.name }
-            )
+                val adapter = ArrayAdapter(
+                    this@SalesActivity,
+                    android.R.layout.simple_spinner_item,
+                    products.map { it.name }
+                )
 
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            binding.spProducts.adapter = adapter
+                adapter.setDropDownViewResource(
+                    android.R.layout.simple_spinner_dropdown_item
+                )
 
-            binding.spProducts.setOnItemSelectedListener(
-                object : android.widget.AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(
-                        parent: android.widget.AdapterView<*>?,
-                        view: android.view.View?,
-                        position: Int,
-                        id: Long
-                    ) {
-                        val selected = products[position]
-                        selectedProductId = selected.id
-                        selectedProductPrice = selected.salePrice
+                binding.spProducts.adapter = adapter
+
+                binding.spProducts.onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+
+                        override fun onItemSelected(
+                            parent: AdapterView<*>?,
+                            view: View?,
+                            position: Int,
+                            id: Long
+                        ) {
+                            val selected = products[position]
+                            selectedProductId = selected.id
+                            selectedProductPrice = selected.salePrice
+                            selectedProductName = selected.name
+                        }
+
+                        override fun onNothingSelected(parent: AdapterView<*>?) {}
                     }
-
-                    override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-                }
-            )
+            }
         }
     }
-}
 
-    // ✅ FIFO que devuelve el COSTO TOTAL
+    // ✅ FIFO real con cálculo de costo
     private suspend fun sellFIFO(
         productId: Int,
         quantityToSell: Double
