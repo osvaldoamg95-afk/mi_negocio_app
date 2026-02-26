@@ -9,10 +9,12 @@ import com.tunegocio.app.data.entities.Product
 import com.tunegocio.app.data.entities.InventoryLot
 import com.tunegocio.app.data.entities.Sale
 import com.tunegocio.app.data.entities.SaleDetail
+import com.tunegocio.app.data.entities.Expense
 
 import com.tunegocio.app.data.dao.ProductDao
 import com.tunegocio.app.data.dao.InventoryLotDao
 import com.tunegocio.app.data.dao.SaleDao
+import com.tunegocio.app.data.dao.ExpenseDao
 
 @Database(
     entities = [
@@ -20,8 +22,16 @@ import com.tunegocio.app.data.dao.SaleDao
         InventoryLot::class,
         Sale::class,
         SaleDetail::class
+    ]
+    entities = [
+        Product::class,
+        InventoryLot::class,
+        Sale::class,
+        SaleDetail::class,
+        Expense::class
     ],
-    version = 3, // 🔥 Subimos versión
+version = 4,,
+    version = 4, // 🔥 Subimos versión
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
