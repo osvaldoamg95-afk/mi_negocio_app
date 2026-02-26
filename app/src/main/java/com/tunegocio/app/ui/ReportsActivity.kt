@@ -28,6 +28,10 @@ class ReportsActivity : AppCompatActivity() {
         binding.btnAnnual.setOnClickListener {
             generateAnnualReport()
         }
+
+        binding.btnBalance.setOnClickListener {
+            generateBalance()
+        }
     }
 
     private fun generateMonthlyReport() {
@@ -88,4 +92,35 @@ class ReportsActivity : AppCompatActivity() {
             UTILIDAD NETA: %.2f
         """.trimIndent().format(total, cost, profit, expenses, netProfit)
     }
+
+    private fun generateBalance() {
+
+    lifecycleScope.launch {
+
+        val inventoryValue =
+            db.inventoryLotDao().getInventoryValue() ?: 0.0
+
+        val accumulatedProfit =
+            db.saleDao().getTotalAccumulatedProfit() ?: 0.0
+
+        val totalExpenses =
+            db.expenseDao().getTotalExpensesBetween(0, System.currentTimeMillis()) ?: 0.0
+
+        val net = accumulatedProfit - totalExpenses
+
+        binding.txtReport.text =
+            """
+            ===== BALANCE GENERAL =====
+            
+            Inventario Valorizado: %.2f
+            
+            Utilidad Acumulada: %.2f
+            Gastos Totales: %.2f
+            
+            -------------------------
+            UTILIDAD NETA REAL: %.2f
+            """.trimIndent()
+                .format(inventoryValue, accumulatedProfit, totalExpenses, net)
+    }
+  }
 }
