@@ -25,6 +25,12 @@ interface InventoryLotDao {
     """)
     suspend fun getLotsFIFO(productId: Int): List<InventoryLot>
 
+    @Query("""
+    SELECT SUM(quantity * purchasePrice)
+    FROM inventory_lots
+    """)
+    suspend fun getInventoryValue(): Double?
+
     // ✅ Actualizar lote (cuando se descuenta)
     @Update
     suspend fun updateLot(lot: InventoryLot)
