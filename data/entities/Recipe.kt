@@ -1,3 +1,7 @@
+package com.tunegocio.app.data.entities
+
+import androidx.room.Entity
+
 @Entity(
     tableName = "recipes",
     primaryKeys = ["productId", "rawMaterialId"]
