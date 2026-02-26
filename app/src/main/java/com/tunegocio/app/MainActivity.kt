@@ -7,6 +7,7 @@ import com.tunegocio.app.databinding.ActivityMainBinding
 import com.tunegocio.app.ui.InventoryActivity
 import com.tunegocio.app.ui.SalesActivity
 import com.tunegocio.app.ui.ReportsActivity
+import com.tunegocio.app.ui.ExpenseActivity
 
 class MainActivity : AppCompatActivity() {
 
