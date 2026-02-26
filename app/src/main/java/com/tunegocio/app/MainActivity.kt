@@ -32,5 +32,9 @@ class MainActivity : AppCompatActivity() {
         binding.btnReportes.setOnClickListener {
             startActivity(Intent(this, ReportsActivity::class.java))
         }
+
+        binding.btnGastos.setOnClickListener {
+            startActivity(Intent(this, ExpenseActivity::class.java))
+       }
     }
 }
