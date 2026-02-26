@@ -24,7 +24,7 @@ import com.tunegocio.app.data.dao.DailyCloseDao
         InventoryLot::class,
         Sale::class,
         SaleDetail::class,
-        Expense::class
+        Expense::class,
         DailyClose::class
     ],
     version = 5,
