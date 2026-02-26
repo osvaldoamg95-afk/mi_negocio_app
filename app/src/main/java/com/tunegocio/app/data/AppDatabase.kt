@@ -10,11 +10,13 @@ import com.tunegocio.app.data.entities.InventoryLot
 import com.tunegocio.app.data.entities.Sale
 import com.tunegocio.app.data.entities.SaleDetail
 import com.tunegocio.app.data.entities.Expense
+import com.tunegocio.app.data.entities.DailyClose
 
 import com.tunegocio.app.data.dao.ProductDao
 import com.tunegocio.app.data.dao.InventoryLotDao
 import com.tunegocio.app.data.dao.SaleDao
 import com.tunegocio.app.data.dao.ExpenseDao
+import com.tunegocio.app.data.dao.DailyCloseDao
 
 @Database(
     entities = [
@@ -23,8 +25,9 @@ import com.tunegocio.app.data.dao.ExpenseDao
         Sale::class,
         SaleDetail::class,
         Expense::class
+        DailyClose::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -33,6 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun inventoryLotDao(): InventoryLotDao
     abstract fun saleDao(): SaleDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun dailyCloseDao(): DailyCloseDao
 
     companion object {
 
