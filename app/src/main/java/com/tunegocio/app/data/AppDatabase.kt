@@ -21,24 +21,18 @@ import com.tunegocio.app.data.dao.ExpenseDao
         Product::class,
         InventoryLot::class,
         Sale::class,
-        SaleDetail::class
-    ]
-    entities = [
-        Product::class,
-        InventoryLot::class,
-        Sale::class,
         SaleDetail::class,
         Expense::class
     ],
-version = 4,,
-    version = 4, // 🔥 Subimos versión
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
     abstract fun inventoryLotDao(): InventoryLotDao
-    abstract fun saleDao(): SaleDao  // ✅ Nuevo DAO
+    abstract fun saleDao(): SaleDao
+    abstract fun expenseDao(): ExpenseDao
 
     companion object {
 
@@ -54,7 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "mi_negocio_db"
                 )
-                .fallbackToDestructiveMigration() // ✅ Evita crash por cambio versión
+                .fallbackToDestructiveMigration()
                 .build()
 
                 INSTANCE = instance
