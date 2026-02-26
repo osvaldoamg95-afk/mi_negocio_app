@@ -25,7 +25,7 @@ class SalesActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
-        loadFirstProduct()
+        loadProduct()
 
         binding.btnSell.setOnClickListener {
 
