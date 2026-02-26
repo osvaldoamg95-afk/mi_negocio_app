@@ -105,23 +105,42 @@ class SalesActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadFirstProduct() {
+    private fun loadProducts() {
 
-        lifecycleScope.launch {
+    lifecycleScope.launch {
 
-            val products = db.productDao().getAllList()
+        val products = db.productDao().getAllList()
 
-            if (products.isNotEmpty()) {
+        if (products.isNotEmpty()) {
 
-                val first = products[0]
-                selectedProductId = first.id
-                selectedProductPrice = first.salePrice
+            val adapter = android.widget.ArrayAdapter(
+                this@SalesActivity,
+                android.R.layout.simple_spinner_item,
+                products.map { it.name }
+            )
 
-                binding.txtProduct.text =
-                    "Producto: ${first.name} | Precio: ${first.salePrice}"
-            }
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.spProducts.adapter = adapter
+
+            binding.spProducts.setOnItemSelectedListener(
+                object : android.widget.AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(
+                        parent: android.widget.AdapterView<*>?,
+                        view: android.view.View?,
+                        position: Int,
+                        id: Long
+                    ) {
+                        val selected = products[position]
+                        selectedProductId = selected.id
+                        selectedProductPrice = selected.salePrice
+                    }
+
+                    override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+                }
+            )
         }
     }
+}
 
     // ✅ FIFO que devuelve el COSTO TOTAL
     private suspend fun sellFIFO(
