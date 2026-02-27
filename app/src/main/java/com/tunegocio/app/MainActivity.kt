@@ -8,6 +8,7 @@ import com.tunegocio.app.ui.InventoryActivity
 import com.tunegocio.app.ui.SalesActivity
 import com.tunegocio.app.ui.ReportsActivity
 import com.tunegocio.app.ui.ExpenseActivity
+import com.tunegocio.app.ui.RawMaterialActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,6 +37,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnGastos.setOnClickListener {
             startActivity(Intent(this, ExpenseActivity::class.java))
-       }
+        }
+
+        binding.btnMaterias.setOnClickListener {
+            startActivity(Intent(this, RawMaterialActivity::class.java))
+        }
     }
 }
