@@ -62,6 +62,7 @@ class SalesActivity : AppCompatActivity() {
                 binding.etQuantity.setText("")
             }
         }
+                updateCartView()
 
         // ✅ Cerrar venta completa
         binding.btnSell.setOnClickListener {
@@ -141,6 +142,7 @@ class SalesActivity : AppCompatActivity() {
                 }
 
                 cart.clear()
+                updateCartView()
 
                 binding.txtStatus.text =
                     "✅ Venta completa | Ganancia: %.2f"
