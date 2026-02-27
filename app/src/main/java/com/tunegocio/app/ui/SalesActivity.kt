@@ -42,6 +42,22 @@ class SalesActivity : AppCompatActivity() {
 
         loadProducts()
 
+    private fun updateCartView() {
+
+        if (cart.isEmpty()) {
+            binding.txtCart.text = "Carrito vacío"
+            return
+        }
+
+        var text = "🛒 CARRITO:\n\n"
+
+        for ((index, item) in cart.withIndex()) {
+             text += "${index + 1}. ${item.productName} x ${item.quantity}\n"
+        }
+
+        binding.txtCart.text = text
+   }
+
         // ✅ Agregar al carrito
         binding.btnAddToCart.setOnClickListener {
 
