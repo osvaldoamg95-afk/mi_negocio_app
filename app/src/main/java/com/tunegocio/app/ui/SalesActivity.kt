@@ -22,7 +22,6 @@ class SalesActivity : AppCompatActivity() {
     private var selectedProductPrice: Double = 0.0
     private var selectedProductName: String = ""
 
-    // ✅ Carrito
     data class CartItem(
         val productId: Int,
         val productName: String,
@@ -42,22 +41,6 @@ class SalesActivity : AppCompatActivity() {
 
         loadProducts()
 
-    private fun updateCartView() {
-
-        if (cart.isEmpty()) {
-            binding.txtCart.text = "Carrito vacío"
-            return
-        }
-
-        var text = "🛒 CARRITO:\n\n"
-
-        for ((index, item) in cart.withIndex()) {
-             text += "${index + 1}. ${item.productName} x ${item.quantity}\n"
-        }
-
-        binding.txtCart.text = text
-   }
-
         // ✅ Agregar al carrito
         binding.btnAddToCart.setOnClickListener {
 
@@ -74,13 +57,20 @@ class SalesActivity : AppCompatActivity() {
                     )
                 )
 
-                binding.txtStatus.text = "🛒 ${selectedProductName} agregado"
+                binding.txtStatus.text = "🛒 $selectedProductName agregado"
                 binding.etQuantity.setText("")
+                updateCartView()
             }
         }
-                updateCartView()
 
-        // ✅ Cerrar venta completa
+        // ✅ Vaciar carrito
+        binding.btnClearCart.setOnClickListener {
+            cart.clear()
+            updateCartView()
+            binding.txtStatus.text = "Carrito vaciado"
+        }
+
+        // ✅ Cerrar venta
         binding.btnSell.setOnClickListener {
 
             lifecycleScope.launch {
@@ -109,7 +99,7 @@ class SalesActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // ✅ Validar stock para todos los productos
+                // ✅ Validar stock
                 for (item in cart) {
 
                     val stock = db.inventoryLotDao()
@@ -125,7 +115,6 @@ class SalesActivity : AppCompatActivity() {
                 var totalVenta = 0.0
                 var totalCost = 0.0
 
-                // ✅ Procesar venta completa
                 for (item in cart) {
 
                     val cost = sellFIFO(item.productId, item.quantity)
@@ -144,7 +133,6 @@ class SalesActivity : AppCompatActivity() {
                     )
                 )
 
-                // ✅ Guardar detalles
                 for (item in cart) {
 
                     db.saleDao().insertSaleDetail(
@@ -161,13 +149,27 @@ class SalesActivity : AppCompatActivity() {
                 updateCartView()
 
                 binding.txtStatus.text =
-                    "✅ Venta completa | Ganancia: %.2f"
-                        .format(profit)
+                    "✅ Venta completa | Ganancia: %.2f".format(profit)
             }
         }
     }
 
-    // ✅ Cargar productos en Spinner
+    private fun updateCartView() {
+
+        if (cart.isEmpty()) {
+            binding.txtCart.text = "Carrito vacío"
+            return
+        }
+
+        var text = "🛒 CARRITO:\n\n"
+
+        for ((index, item) in cart.withIndex()) {
+            text += "${index + 1}. ${item.productName} x ${item.quantity}\n"
+        }
+
+        binding.txtCart.text = text
+    }
+
     private fun loadProducts() {
 
         lifecycleScope.launch {
@@ -209,7 +211,6 @@ class SalesActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ FIFO real con cálculo de costo
     private suspend fun sellFIFO(
         productId: Int,
         quantityToSell: Double
