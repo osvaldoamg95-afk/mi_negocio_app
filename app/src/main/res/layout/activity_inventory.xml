@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:padding="16dp"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
         android:orientation="vertical"
+        android:padding="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -22,24 +23,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
+        <!-- ✅ NUEVO CHECKBOX -->
+        <CheckBox
+            android:id="@+id/chkManufactured"
+            android:text="Es producto manufacturado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
         <Button
-    android:id="@+id/btnSaveProduct"
-    android:text="Guardar Producto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
+            android:id="@+id/btnSaveProduct"
+            android:text="Guardar Producto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-<Button
-    android:id="@+id/btnOpenPurchase"
-    android:text="Registrar Compra"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnTestSell"
-    android:text="Vender 1 unidad (Prueba FIFO)"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
+        <Button
+            android:id="@+id/btnOpenPurchase"
+            android:text="Registrar Compra"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
         <TextView
             android:id="@+id/txtProductList"
@@ -48,5 +49,4 @@
             android:layout_height="wrap_content"/>
 
     </LinearLayout>
-
 </ScrollView>
