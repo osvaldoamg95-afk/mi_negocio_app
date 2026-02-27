@@ -48,6 +48,29 @@ class PurchaseActivity : AppCompatActivity() {
             }
         }
     }
+    
+    binding.btnAddPurchase.setOnClickListener {
+
+    val quantity = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
+    val price = binding.etPurchasePrice.text.toString().toDoubleOrNull() ?: 0.0
+
+    if (selectedProductId != -1 && quantity > 0) {
+
+        purchaseCart.add(
+            PurchaseItem(
+                productId = selectedProductId,
+                quantity = quantity,
+                price = price
+            )
+        )
+
+        binding.txtStatus.text = "Producto agregado a compra"
+        binding.etQuantity.setText("")
+        binding.etPurchasePrice.setText("")
+
+        updatePurchaseCartView()
+    }
+}
 
     private fun loadProduct() {
 
