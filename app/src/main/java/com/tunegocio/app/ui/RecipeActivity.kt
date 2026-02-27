@@ -29,6 +29,7 @@ class RecipeActivity : AppCompatActivity() {
 
         loadProducts()
         loadMaterials()
+        loadRecipes()
 
         binding.btnAddRecipe.setOnClickListener {
 
@@ -52,6 +53,8 @@ class RecipeActivity : AppCompatActivity() {
 
                     binding.txtStatus.text = "✅ Receta guardada"
                     binding.etQuantityRequired.setText("")
+
+                    loadRecipes()
                 }
             }
         }
@@ -124,6 +127,41 @@ class RecipeActivity : AppCompatActivity() {
 
                     override fun onNothingSelected(parent: AdapterView<*>?) {}
                 }
+        }
+    }
+
+    private fun loadRecipes() {
+
+        lifecycleScope.launch {
+
+            val products = db.productDao().getAllList()
+            val materials = db.rawMaterialDao().getAll()
+
+            var text = "RECETAS:\n\n"
+
+            for (product in products) {
+
+                val recipeList = db.recipeDao()
+                    .getRecipeForProduct(product.id)
+
+                if (recipeList.isNotEmpty()) {
+
+                    text += "Producto: ${product.name}\n"
+
+                    for (r in recipeList) {
+
+                        val materialName = materials
+                            .find { it.id == r.rawMaterialId }
+                            ?.name ?: "Desconocido"
+
+                        text += "  - $materialName x ${r.quantityRequired}\n"
+                    }
+
+                    text += "\n"
+                }
+            }
+
+            binding.txtStatus.text = text
         }
     }
 }
