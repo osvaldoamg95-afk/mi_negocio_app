@@ -9,6 +9,7 @@ import com.tunegocio.app.ui.SalesActivity
 import com.tunegocio.app.ui.ReportsActivity
 import com.tunegocio.app.ui.ExpenseActivity
 import com.tunegocio.app.ui.RawMaterialActivity
+import com.tunegocio.app.ui.RecipeActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +42,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnMaterias.setOnClickListener {
             startActivity(Intent(this, RawMaterialActivity::class.java))
+        }
+
+        binding.btnRecetas.setOnClickListener {
+            startActivity(Intent(this, RecipeActivity::class.java))
         }
     }
 }
