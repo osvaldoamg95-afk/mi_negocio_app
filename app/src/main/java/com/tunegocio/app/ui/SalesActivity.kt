@@ -216,73 +216,82 @@ class SalesActivity : AppCompatActivity() {
         quantityToSell: Double
     ): Double {
 
-        var totalCost = 0.0
+         var totalCost = 0.0
 
-        val product = db.productDao().getById(productId)
+         val product = db.productDao().getById(productId)
 
-        if (product.isManufactured) {
+         if (product.isManufactured) {
 
-            val recipe = db.recipeDao().getRecipeForProduct(productId)
+             val recipe = db.recipeDao().getRecipeForProduct(productId)
 
+             if (recipe.isEmpty()) {
+            throw Exception("Producto manufacturado sin receta")
+            }
+
+            // ✅ Validar stock de materias primas primero
             for (item in recipe) {
 
-                val requiredQty = item.quantityRequired * quantityToSell
+                 val requiredQty = item.quantityRequired * quantityToSell
 
-                val stock = db.inventoryLotDao()
-                     .getTotalStock(item.rawMaterialId) ?: 0.0
+                 val stock = db.inventoryLotDao()
+                       .getTotalStock(item.rawMaterialId) ?: 0.0
 
-            if (stock < requiredQty) {
-                throw Exception("Materia prima insuficiente")
-            }
+                 if (stock < requiredQty) {
+                     throw Exception("Materia prima insuficiente")
+                 }
+           }
 
-            var remaining = requiredQty
+           // ✅ Descontar materias primas
+           for (item in recipe) {
 
-            val lots = db.inventoryLotDao()
-                .getLotsFIFO(item.rawMaterialId)
+               var remaining = item.quantityRequired * quantityToSell
 
-            for (lot in lots) {
+               val lots = db.inventoryLotDao()
+                   .getLotsFIFO(item.rawMaterialId)
 
-                if (remaining <= 0) break
+               for (lot in lots) {
 
-                if (lot.quantity <= remaining) {
+                   if (remaining <= 0) break
 
-                    totalCost += lot.quantity * lot.purchasePrice
-                    remaining -= lot.quantity
+                   if (lot.quantity <= remaining) {
 
-                    db.inventoryLotDao().updateLot(
-                        lot.copy(quantity = 0.0)
-                    )
+                       totalCost += lot.quantity * lot.purchasePrice
+                       remaining -= lot.quantity
 
-                } else {
+                       db.inventoryLotDao().updateLot(
+                           lot.copy(quantity = 0.0)
+                       )
 
-                    totalCost += remaining * lot.purchasePrice
+                   } else {
 
-                    db.inventoryLotDao().updateLot(
-                        lot.copy(quantity = lot.quantity - remaining)
-                    )
+                       totalCost += remaining * lot.purchasePrice
 
-                    remaining = 0.0
-                }
-            }
-        }
+                       db.inventoryLotDao().updateLot(
+                           lot.copy(quantity = lot.quantity - remaining)
+                       )
 
-    } else {
+                       remaining = 0.0
+                   }
+               }
+           }
 
-        var remaining = quantityToSell
+       } else {
 
-        val lots = db.inventoryLotDao().getLotsFIFO(productId)
+           var remaining = quantityToSell
 
-        for (lot in lots) {
+           val lots = db.inventoryLotDao().getLotsFIFO(productId)
 
-            if (remaining <= 0) break
+           for (lot in lots) {
 
-            if (lot.quantity <= remaining) {
+               if (remaining <= 0) break
 
-                totalCost += lot.quantity * lot.purchasePrice
-                remaining -= lot.quantity
+               if (lot.quantity <= remaining) {
 
-                db.inventoryLotDao().updateLot(
-                    lot.copy(quantity = 0.0)
+                   totalCost += lot.quantity * lot.purchasePrice
+                   remaining -= lot.quantity
+
+                   db.inventoryLotDao().updateLot(
+                       lot.copy(quantity = 0.0)
                 )
 
             } else {
@@ -290,7 +299,7 @@ class SalesActivity : AppCompatActivity() {
                 totalCost += remaining * lot.purchasePrice
 
                 db.inventoryLotDao().updateLot(
-                    lot.copy(quantity = lot.quantity - remaining)
+                   lot.copy(quantity = lot.quantity - remaining)
                 )
 
                 remaining = 0.0
