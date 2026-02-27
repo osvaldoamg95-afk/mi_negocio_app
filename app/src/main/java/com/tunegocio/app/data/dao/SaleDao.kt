@@ -33,4 +33,7 @@ interface SaleDao {
     WHERE date BETWEEN :startDate AND :endDate
     """)
     suspend fun getTotalProfitBetween(startDate: Long, endDate: Long): Double?
+
+    @Query("SELECT SUM(profit) FROM sales")
+    suspend fun getTotalAccumulatedProfit(): Double?
 }
