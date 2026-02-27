@@ -1,39 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="16dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Spinner
-        android:id="@+id/spProducts"
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/txtProduct"
-        android:textSize="18sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <Spinner
+            android:id="@+id/spProducts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-    <EditText
-        android:id="@+id/etQuantity"
-        android:hint="Cantidad a vender"
-        android:inputType="numberDecimal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <EditText
+            android:id="@+id/etQuantity"
+            android:hint="Cantidad a vender"
+            android:inputType="numberDecimal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/btnSell"
-        android:text="Registrar Venta"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <!-- ✅ BOTÓN AGREGAR AL CARRITO -->
+        <Button
+            android:id="@+id/btnAddToCart"
+            android:text="Agregar al carrito"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-    <TextView
-        android:id="@+id/txtStatus"
-        android:paddingTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <!-- ✅ MOSTRAR CARRITO -->
+        <TextView
+            android:id="@+id/txtCart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:text="Carrito vacío"/>
 
-</LinearLayout>
+        <!-- ✅ BOTÓN VACIAR CARRITO -->
+        <Button
+            android:id="@+id/btnClearCart"
+            android:text="Vaciar carrito"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- ✅ BOTÓN REGISTRAR VENTA -->
+        <Button
+            android:id="@+id/btnSell"
+            android:text="Registrar Venta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:paddingTop="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+</ScrollView>
