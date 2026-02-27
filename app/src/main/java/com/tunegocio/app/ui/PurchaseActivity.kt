@@ -22,7 +22,7 @@ class PurchaseActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
-        loadFirstProduct()
+        loadProduct()
 
         binding.btnSavePurchase.setOnClickListener {
 
@@ -49,7 +49,7 @@ class PurchaseActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadFirstProduct() {
+    private fun loadProduct() {
 
         lifecycleScope.launch {
 
@@ -64,5 +64,13 @@ class PurchaseActivity : AppCompatActivity() {
                 binding.txtSelectedProduct.setText(nameText)
             }
         }
+
+           data class PurchaseItem(
+           val productId: Int,
+           val quantity: Double,
+           val price: Double
+        )
+
+        private val purchaseCart = mutableListOf<PurchaseItem>()
     }
 }
