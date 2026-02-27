@@ -5,18 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-import com.tunegocio.app.data.entities.Product
-import com.tunegocio.app.data.entities.InventoryLot
-import com.tunegocio.app.data.entities.Sale
-import com.tunegocio.app.data.entities.SaleDetail
-import com.tunegocio.app.data.entities.Expense
-import com.tunegocio.app.data.entities.DailyClose
+import com.tunegocio.app.data.entities.*
 
-import com.tunegocio.app.data.dao.ProductDao
-import com.tunegocio.app.data.dao.InventoryLotDao
-import com.tunegocio.app.data.dao.SaleDao
-import com.tunegocio.app.data.dao.ExpenseDao
-import com.tunegocio.app.data.dao.DailyCloseDao
+import com.tunegocio.app.data.dao.*
 
 @Database(
     entities = [
@@ -25,9 +16,11 @@ import com.tunegocio.app.data.dao.DailyCloseDao
         Sale::class,
         SaleDetail::class,
         Expense::class,
-        DailyClose::class
+        DailyClose::class,
+        RawMaterial::class,
+        Recipe::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -37,6 +30,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun saleDao(): SaleDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun dailyCloseDao(): DailyCloseDao
+    abstract fun rawMaterialDao(): RawMaterialDao
+    abstract fun recipeDao(): RecipeDao
 
     companion object {
 
