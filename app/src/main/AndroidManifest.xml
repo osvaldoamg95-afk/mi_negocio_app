@@ -39,6 +39,10 @@
 <activity
     android:name=".ui.RawMaterialActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.RecipeActivity"
+    android:exported="false"/>
         
     </application>
 
