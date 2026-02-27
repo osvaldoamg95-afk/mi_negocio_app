@@ -216,8 +216,59 @@ class SalesActivity : AppCompatActivity() {
         quantityToSell: Double
     ): Double {
 
-        var remaining = quantityToSell
         var totalCost = 0.0
+
+        val product = db.productDao().getById(productId)
+
+        if (product.isManufactured) {
+
+            val recipe = db.recipeDao().getRecipeForProduct(productId)
+
+            for (item in recipe) {
+
+                val requiredQty = item.quantityRequired * quantityToSell
+
+                val stock = db.inventoryLotDao()
+                     .getTotalStock(item.rawMaterialId) ?: 0.0
+
+            if (stock < requiredQty) {
+                throw Exception("Materia prima insuficiente")
+            }
+
+            var remaining = requiredQty
+
+            val lots = db.inventoryLotDao()
+                .getLotsFIFO(item.rawMaterialId)
+
+            for (lot in lots) {
+
+                if (remaining <= 0) break
+
+                if (lot.quantity <= remaining) {
+
+                    totalCost += lot.quantity * lot.purchasePrice
+                    remaining -= lot.quantity
+
+                    db.inventoryLotDao().updateLot(
+                        lot.copy(quantity = 0.0)
+                    )
+
+                } else {
+
+                    totalCost += remaining * lot.purchasePrice
+
+                    db.inventoryLotDao().updateLot(
+                        lot.copy(quantity = lot.quantity - remaining)
+                    )
+
+                    remaining = 0.0
+                }
+            }
+        }
+
+    } else {
+
+        var remaining = quantityToSell
 
         val lots = db.inventoryLotDao().getLotsFIFO(productId)
 
@@ -238,10 +289,8 @@ class SalesActivity : AppCompatActivity() {
 
                 totalCost += remaining * lot.purchasePrice
 
-                val newQuantity = lot.quantity - remaining
-
                 db.inventoryLotDao().updateLot(
-                    lot.copy(quantity = newQuantity)
+                    lot.copy(quantity = lot.quantity - remaining)
                 )
 
                 remaining = 0.0
@@ -251,7 +300,8 @@ class SalesActivity : AppCompatActivity() {
         if (remaining > 0) {
             throw Exception("Stock insuficiente")
         }
-
-        return totalCost
     }
+
+    return totalCost
+  }
 }
