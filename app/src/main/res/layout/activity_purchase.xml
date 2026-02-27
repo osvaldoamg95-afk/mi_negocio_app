@@ -12,11 +12,6 @@
         android:layout_height="wrap_content"/>
 
     <TextView
-        android:id="@+id/txtPurchaseCart"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <TextView
         android:id="@+id/txtSelectedProduct"
         android:text="Producto:"
         android:textSize="18sp"
