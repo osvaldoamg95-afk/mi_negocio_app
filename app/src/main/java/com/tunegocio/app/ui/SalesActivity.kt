@@ -41,7 +41,6 @@ class SalesActivity : AppCompatActivity() {
 
         loadProducts()
 
-        // ✅ Agregar al carrito
         binding.btnAddToCart.setOnClickListener {
 
             val quantity = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
@@ -63,93 +62,91 @@ class SalesActivity : AppCompatActivity() {
             }
         }
 
-        // ✅ Vaciar carrito
         binding.btnClearCart.setOnClickListener {
             cart.clear()
             updateCartView()
             binding.txtStatus.text = "Carrito vaciado"
         }
 
-        // ✅ Cerrar venta
         binding.btnSell.setOnClickListener {
 
             lifecycleScope.launch {
 
-                if (cart.isEmpty()) {
-                    binding.txtStatus.text = "Carrito vacío"
-                    return@launch
-                }
+                try {
 
-                // ✅ Validar cierre diario
-                val calendar = Calendar.getInstance()
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-
-                val startDay = calendar.timeInMillis
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-                val endDay = calendar.timeInMillis
-
-                val isClosed = db.dailyCloseDao()
-                    .isClosed(startDay, endDay)
-
-                if (isClosed > 0) {
-                    binding.txtStatus.text = "❌ El día está cerrado"
-                    return@launch
-                }
-
-                // ✅ Validar stock
-                for (item in cart) {
-
-                    val stock = db.inventoryLotDao()
-                        .getTotalStock(item.productId) ?: 0.0
-
-                    if (stock < item.quantity) {
-                        binding.txtStatus.text =
-                            "❌ Stock insuficiente en ${item.productName}"
+                    if (cart.isEmpty()) {
+                        binding.txtStatus.text = "Carrito vacío"
                         return@launch
                     }
-                }
 
-                var totalVenta = 0.0
-                var totalCost = 0.0
+                    val calendar = Calendar.getInstance()
+                    calendar.set(Calendar.HOUR_OF_DAY, 0)
+                    calendar.set(Calendar.MINUTE, 0)
+                    calendar.set(Calendar.SECOND, 0)
+                    calendar.set(Calendar.MILLISECOND, 0)
 
-                for (item in cart) {
+                    val startDay = calendar.timeInMillis
+                    calendar.add(Calendar.DAY_OF_MONTH, 1)
+                    val endDay = calendar.timeInMillis
 
-                    val cost = sellFIFO(item.productId, item.quantity)
-                    totalCost += cost
-                    totalVenta += item.quantity * item.price
-                }
+                    val isClosed = db.dailyCloseDao()
+                        .isClosed(startDay, endDay)
 
-                val profit = totalVenta - totalCost
+                    if (isClosed > 0) {
+                        throw Exception("El día está cerrado")
+                    }
 
-                val saleId = db.saleDao().insertSale(
-                    Sale(
-                        date = System.currentTimeMillis(),
-                        total = totalVenta,
-                        costTotal = totalCost,
-                        profit = profit
-                    )
-                )
+                    for (item in cart) {
 
-                for (item in cart) {
+                        val stock = db.inventoryLotDao()
+                            .getTotalStock(item.productId) ?: 0.0
 
-                    db.saleDao().insertSaleDetail(
-                        SaleDetail(
-                            saleId = saleId.toInt(),
-                            productId = item.productId,
-                            quantity = item.quantity,
-                            salePrice = item.price
+                        if (stock < item.quantity) {
+                            throw Exception("Stock insuficiente en ${item.productName}")
+                        }
+                    }
+
+                    var totalVenta = 0.0
+                    var totalCost = 0.0
+
+                    for (item in cart) {
+                        val cost = sellFIFO(item.productId, item.quantity)
+                        totalCost += cost
+                        totalVenta += item.quantity * item.price
+                    }
+
+                    val profit = totalVenta - totalCost
+
+                    val saleId = db.saleDao().insertSale(
+                        Sale(
+                            date = System.currentTimeMillis(),
+                            total = totalVenta,
+                            costTotal = totalCost,
+                            profit = profit
                         )
                     )
+
+                    for (item in cart) {
+                        db.saleDao().insertSaleDetail(
+                            SaleDetail(
+                                saleId = saleId.toInt(),
+                                productId = item.productId,
+                                quantity = item.quantity,
+                                salePrice = item.price
+                            )
+                        )
+                    }
+
+                    cart.clear()
+                    updateCartView()
+
+                    binding.txtStatus.text =
+                        "✅ Venta completa | Ganancia: %.2f"
+                            .format(profit)
+
+                } catch (e: Exception) {
+                    binding.txtStatus.text = "❌ ${e.message}"
                 }
-
-                cart.clear()
-                updateCartView()
-
-                binding.txtStatus.text =
-                    "✅ Venta completa | Ganancia: %.2f".format(profit)
             }
         }
     }
@@ -216,82 +213,22 @@ class SalesActivity : AppCompatActivity() {
         quantityToSell: Double
     ): Double {
 
-         var totalCost = 0.0
+        var remaining = quantityToSell
+        var totalCost = 0.0
 
-         val product = db.productDao().getById(productId)
+        val lots = db.inventoryLotDao().getLotsFIFO(productId)
 
-         if (product.isManufactured) {
+        for (lot in lots) {
 
-             val recipe = db.recipeDao().getRecipeForProduct(productId)
+            if (remaining <= 0) break
 
-             if (recipe.isEmpty()) {
-            throw Exception("Producto manufacturado sin receta")
-            }
+            if (lot.quantity <= remaining) {
 
-            // ✅ Validar stock de materias primas primero
-            for (item in recipe) {
+                totalCost += lot.quantity * lot.purchasePrice
+                remaining -= lot.quantity
 
-                 val requiredQty = item.quantityRequired * quantityToSell
-
-                 val stock = db.inventoryLotDao()
-                       .getTotalStock(item.rawMaterialId) ?: 0.0
-
-                 if (stock < requiredQty) {
-                     throw Exception("Materia prima insuficiente")
-                 }
-           }
-
-           // ✅ Descontar materias primas
-           for (item in recipe) {
-
-               var remaining = item.quantityRequired * quantityToSell
-
-               val lots = db.inventoryLotDao()
-                   .getLotsFIFO(item.rawMaterialId)
-
-               for (lot in lots) {
-
-                   if (remaining <= 0) break
-
-                   if (lot.quantity <= remaining) {
-
-                       totalCost += lot.quantity * lot.purchasePrice
-                       remaining -= lot.quantity
-
-                       db.inventoryLotDao().updateLot(
-                           lot.copy(quantity = 0.0)
-                       )
-
-                   } else {
-
-                       totalCost += remaining * lot.purchasePrice
-
-                       db.inventoryLotDao().updateLot(
-                           lot.copy(quantity = lot.quantity - remaining)
-                       )
-
-                       remaining = 0.0
-                   }
-               }
-           }
-
-       } else {
-
-           var remaining = quantityToSell
-
-           val lots = db.inventoryLotDao().getLotsFIFO(productId)
-
-           for (lot in lots) {
-
-               if (remaining <= 0) break
-
-               if (lot.quantity <= remaining) {
-
-                   totalCost += lot.quantity * lot.purchasePrice
-                   remaining -= lot.quantity
-
-                   db.inventoryLotDao().updateLot(
-                       lot.copy(quantity = 0.0)
+                db.inventoryLotDao().updateLot(
+                    lot.copy(quantity = 0.0)
                 )
 
             } else {
@@ -299,7 +236,7 @@ class SalesActivity : AppCompatActivity() {
                 totalCost += remaining * lot.purchasePrice
 
                 db.inventoryLotDao().updateLot(
-                   lot.copy(quantity = lot.quantity - remaining)
+                    lot.copy(quantity = lot.quantity - remaining)
                 )
 
                 remaining = 0.0
@@ -309,8 +246,7 @@ class SalesActivity : AppCompatActivity() {
         if (remaining > 0) {
             throw Exception("Stock insuficiente")
         }
-    }
 
-    return totalCost
-  }
+        return totalCost
+    }
 }
