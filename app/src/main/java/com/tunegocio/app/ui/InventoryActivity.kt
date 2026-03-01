@@ -48,6 +48,19 @@ class InventoryActivity : AppCompatActivity() {
         binding.btnOpenPurchase.setOnClickListener {
             startActivity(Intent(this, PurchaseActivity::class.java))
         }
+
+        binding.btnDelete.setOnClickListener {
+            // Confirmación simple (idealmente un Dialog)
+            viewModel.deleteProduct()
+            clearFields()
+        }
+
+        binding.btnMerma.setOnClickListener {
+            // Usar un InputDialog para pedir cantidad
+            // Por simplicidad ahora, usaremos el campo de precio como cantidad (truco rápido)
+            // O mejor: Crear un Dialog real.
+            showMermaDialog()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -62,6 +75,7 @@ class InventoryActivity : AppCompatActivity() {
                 binding.chkManufactured.isChecked = product.isManufactured
                 binding.btnSaveProduct.text = "ACTUALIZAR PRODUCTO"
                 binding.btnCancelEdit.visibility = View.VISIBLE
+                binding.layoutEditActions.visibility = View.VISIBLE
             },
             stockProvider = { id -> 
                 // Truco rápido: En un entorno real esto iría en el objeto Product con un JOIN
@@ -82,6 +96,7 @@ class InventoryActivity : AppCompatActivity() {
         binding.chkManufactured.isChecked = false
         binding.btnSaveProduct.text = "GUARDAR PRODUCTO"
         binding.btnCancelEdit.visibility = View.GONE
+        binding.layoutEditActions.visibility = View.GONE
     }
 
     private fun setupObservers() {
