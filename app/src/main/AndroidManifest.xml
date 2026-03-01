@@ -47,6 +47,10 @@
 <activity
     android:name=".ui.HistoryActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.ExportActivity"
+    android:exported="false"/>
         
     </application>
 
