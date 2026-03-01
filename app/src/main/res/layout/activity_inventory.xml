@@ -1,52 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
+    <!-- Formulario de Edición/Creación -->
+    <androidx.cardview.widget.CardView
+        android:layout_marginBottom="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <EditText
-            android:id="@+id/etProductName"
-            android:hint="Nombre del producto"
+        
+        <LinearLayout
+            android:padding="16dp"
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content">
 
-        <EditText
-            android:id="@+id/etProductPrice"
-            android:hint="Precio de venta"
-            android:inputType="numberDecimal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/etProductName"
+                android:hint="NOMBRE DEL PRODUCTO"
+                android:inputType="textCapCharacters"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
-        <!-- ✅ NUEVO CHECKBOX -->
-        <CheckBox
-            android:id="@+id/chkManufactured"
-            android:text="Es producto manufacturado"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            <EditText
+                android:id="@+id/etProductPrice"
+                android:hint="PRECIO DE VENTA"
+                android:inputType="numberDecimal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
-        <Button
-            android:id="@+id/btnSaveProduct"
-            android:text="Guardar Producto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            <CheckBox
+                android:id="@+id/chkManufactured"
+                android:text="ES PRODUCTO MANUFACTURADO"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
-        <Button
-            android:id="@+id/btnOpenPurchase"
-            android:text="Registrar Compra"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            <Button
+                android:id="@+id/btnSaveProduct"
+                android:text="GUARDAR PRODUCTO"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+                
+            <Button
+                android:id="@+id/btnCancelEdit"
+                android:text="CANCELAR EDICIÓN"
+                android:visibility="gone"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:id="@+id/txtProductList"
-            android:paddingTop="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/btnOpenPurchase"
+        android:text="REGISTRAR COMPRA (ENTRADA)"
+        android:layout_marginBottom="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
-    </LinearLayout>
-</ScrollView>
+    <!-- LISTA PROFESIONAL -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvProducts"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>
