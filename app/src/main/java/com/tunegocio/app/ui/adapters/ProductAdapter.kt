@@ -19,10 +19,12 @@ class ProductAdapter(
         fun bind(product: Product) {
             binding.txtName.text = product.name
             
-            val stock = stockProvider(product.id)
-            val type = if (product.isManufactured) "(MANUF)" else ""
-            
-            binding.txtDetails.text = "$type Stock: $stock | Precio: $${product.salePrice}"
+            val typeStr = when(product.type) {
+                ProductType.INSUMO -> "🔵 INSUMO"
+                ProductType.PRODUCTO_SIMPLE -> "🟢 SIMPLE"
+                ProductType.MANUFACTURADO -> "🟠 MANUFACTURA"
+            }
+            binding.txtDetails.text = "$typeStr | Stock: $stock | $${product.salePrice}"
 
             binding.btnEdit.setOnClickListener {
                 onEditClick(product)
