@@ -18,10 +18,15 @@ class PurchaseViewModel(application: Application) : AndroidViewModel(application
         val productName: String,
         val quantity: Double,
         val price: Double
-    )
+    ) {
+        val subtotal: Double get() = quantity * price
+    }
 
     private val _cart = MutableLiveData<List<PurchaseItem>>(emptyList())
     val cart: LiveData<List<PurchaseItem>> = _cart
+
+    private val _totalAmount = MutableLiveData<Double>(0.0)
+    val totalAmount: LiveData<Double> = _totalAmount
 
     private val _statusMessage = MutableLiveData<String>()
     val statusMessage: LiveData<String> = _statusMessage
@@ -29,13 +34,19 @@ class PurchaseViewModel(application: Application) : AndroidViewModel(application
     fun addToCart(productId: Int, productName: String, quantity: Double, price: Double) {
         val currentList = _cart.value.orEmpty().toMutableList()
         currentList.add(PurchaseItem(productId, productName, quantity, price))
-        _cart.value = currentList
+        updateCart(currentList)
         _statusMessage.value = "📦 $productName agregado"
     }
 
-    fun clearCart() {
-        _cart.value = emptyList()
-        _statusMessage.value = "Carrito vaciado"
+    fun removeFromCart(item: PurchaseItem) {
+        val currentList = _cart.value.orEmpty().toMutableList()
+        currentList.remove(item)
+        updateCart(currentList)
+    }
+
+    private fun updateCart(items: List<PurchaseItem>) {
+        _cart.value = items
+        _totalAmount.value = items.sumOf { it.subtotal }
     }
 
     fun savePurchase() {
@@ -47,9 +58,6 @@ class PurchaseViewModel(application: Application) : AndroidViewModel(application
 
         viewModelScope.launch {
             try {
-                // Insertamos cada lote. 
-                // IDEALMENTE: Deberíamos tener un 'insertAll' en el DAO para hacerlo en una sola transacción.
-                // Por ahora lo hacemos en bucle dentro de la corrutina.
                 currentCart.forEach { item ->
                     db.inventoryLotDao().insert(
                         InventoryLot(
@@ -60,7 +68,7 @@ class PurchaseViewModel(application: Application) : AndroidViewModel(application
                         )
                     )
                 }
-                clearCart()
+                updateCart(emptyList()) // Limpiar
                 _statusMessage.value = "✅ Compra guardada exitosamente"
             } catch (e: Exception) {
                 _statusMessage.value = "❌ Error al guardar compra: ${e.message}"
