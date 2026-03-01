@@ -42,4 +42,16 @@ interface SaleDao {
 
     @Query("SELECT SUM(profit) FROM sales")
     suspend fun getTotalAccumulatedProfit(): Double?
+
+    @Query("""
+    SELECT SUM(total) FROM sales 
+    WHERE date >= :startOfDay
+    """)
+    suspend fun getTodaySales(startOfDay: Long): Double?
+
+    @Query("""
+    SELECT SUM(profit) FROM sales 
+    WHERE date >= :startOfDay
+    """)
+    suspend fun getTodayProfit(startOfDay: Long): Double?
 }
