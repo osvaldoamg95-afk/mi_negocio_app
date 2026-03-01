@@ -3,96 +3,206 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#F5F5F5">
 
-    <!-- Formulario de Edición/Creación -->
-    <androidx.cardview.widget.CardView
-        android:layout_marginBottom="16dp"
+    <!-- FORMULARIO DE PRODUCTO -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        
+        android:layout_height="0dp">
+
         <LinearLayout
             android:padding="16dp"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <EditText
-                android:id="@+id/etProductName"
-                android:hint="NOMBRE DEL PRODUCTO"
-                android:inputType="textCapCharacters"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                xmlns:app="http://schemas.android.com/apk/res-auto">
 
-            <EditText
-                android:id="@+id/etProductPrice"
-                android:hint="PRECIO DE VENTA"
-                android:inputType="numberDecimal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                <LinearLayout
+                    android:padding="16dp"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <CheckBox
-                android:id="@+id/chkManufactured"
-                android:text="ES PRODUCTO MANUFACTURADO"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                    <TextView
+                        android:text="DETALLES DEL PRODUCTO"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="10dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
-            <Button
-                android:id="@+id/btnSaveProduct"
-                android:text="GUARDAR PRODUCTO"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-                
-            <Button
-                android:id="@+id/btnCancelEdit"
-                android:text="CANCELAR EDICIÓN"
+                    <EditText
+                        android:id="@+id/etName"
+                        android:hint="NOMBRE (Ej: HAMBURGUESA)"
+                        android:inputType="textCapCharacters"
+                        android:background="@android:drawable/edit_text"
+                        android:padding="12dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <EditText
+                        android:id="@+id/etPrice"
+                        android:hint="PRECIO VENTA"
+                        android:inputType="numberDecimal"
+                        android:background="@android:drawable/edit_text"
+                        android:padding="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:text="TIPO DE ARTÍCULO:"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+
+                    <RadioGroup
+                        android:id="@+id/rgType"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <RadioButton
+                            android:id="@+id/rbInsumo"
+                            android:text="🔵 INSUMO (Solo compra, Ej: Pan)"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <RadioButton
+                            android:id="@+id/rbSimple"
+                            android:text="🟢 PRODUCTO SIMPLE (Compra y Venta, Ej: Refresco)"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+
+                        <RadioButton
+                            android:id="@+id/rbManufacturado"
+                            android:text="🟠 MANUFACTURADO (Se prepara con Insumos, Ej: Sandwich)"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                    </RadioGroup>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- SECCIÓN DE RECETA (SOLO VISIBLE SI ES MANUFACTURADO) -->
+            <LinearLayout
+                android:id="@+id/layoutRecipe"
                 android:visibility="gone"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <!-- BOTONES DE ACCIÓN PELIGROSA (Visibles solo al editar) -->
-         <LinearLayout
-                android:id="@+id/layoutEditActions"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                android:layout_marginTop="8dp"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-            <Button
-                android:id="@+id/btnMerma"
-                android:text="REGISTRAR MERMA"
-                android:backgroundTint="#FF9800"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"
-                android:layout_width="0dp"
+                <TextView
+                    android:text="RECETA (INGREDIENTES)"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="4dp"
+                    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+                    <LinearLayout
+                        android:padding="16dp"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:orientation="horizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <Spinner
+                                android:id="@+id/spIngredients"
+                                android:layout_weight="1"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"/>
+
+                            <EditText
+                                android:id="@+id/etIngredientQty"
+                                android:hint="CANT"
+                                android:inputType="numberDecimal"
+                                android:layout_width="80dp"
+                                android:layout_height="wrap_content"/>
+
+                            <Button
+                                android:id="@+id/btnAddIngredient"
+                                android:text="+"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/txtRecipeList"
+                            android:text="Sin ingredientes agregados."
+                            android:padding="10dp"
+                            android:background="#EEEEEE"
+                            android:layout_marginTop="8dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <!-- LISTA DE PRODUCTOS EXISTENTES -->
+            <TextView
+                android:text="CATÁLOGO ACTUAL"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
-             <Button
-                 android:id="@+id/btnDelete"
-                 android:text="ELIMINAR"
-                 android:backgroundTint="#D32F2F"
-                 android:layout_weight="1"
-                 android:layout_marginStart="4dp"
-                 android:layout_width="0dp"
-                 android:layout_height="wrap_content"/>
-         </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvProducts"
+                android:nestedScrollingEnabled="false"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
-    <Button
-        android:id="@+id/btnOpenPurchase"
-        android:text="REGISTRAR COMPRA (ENTRADA)"
-        android:layout_marginBottom="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-    <!-- LISTA PROFESIONAL -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvProducts"
+    <!-- BOTONES INFERIORES -->
+    <LinearLayout
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/btnCancelEdit"
+            android:text="CANCELAR"
+            android:backgroundTint="#D32F2F"
+            android:visibility="gone"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnSave"
+            android:text="GUARDAR PRODUCTO"
+            android:backgroundTint="#1976D2"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
 
 </LinearLayout>
