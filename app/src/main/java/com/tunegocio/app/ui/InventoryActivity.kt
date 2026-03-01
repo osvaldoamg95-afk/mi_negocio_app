@@ -1,16 +1,17 @@
 package com.tunegocio.app.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.text.InputFilter
 import android.view.View
-import android.widget.EditText
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.tunegocio.app.data.entities.ProductType
+import com.tunegocio.app.data.entities.Product
 import com.tunegocio.app.databinding.ActivityInventoryBinding
 import com.tunegocio.app.ui.adapters.ProductAdapter
 import com.tunegocio.app.viewmodel.InventoryViewModel
@@ -22,24 +23,70 @@ class InventoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInventoryBinding
     private val viewModel: InventoryViewModel by viewModels()
     private lateinit var adapter: ProductAdapter
+    
+    // Para el spinner de ingredientes
+    private var selectedIngredientId: Int = -1
+    private var insumosList: List<Product> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityInventoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.etProductName.filters = arrayOf(InputFilter.AllCaps())
+        binding.etName.filters = arrayOf(InputFilter.AllCaps())
 
-        setupRecyclerView()
+        setupUI()
         setupObservers()
+    }
 
-        binding.btnSaveProduct.setOnClickListener {
-            val name = binding.etProductName.text.toString()
-            val price = binding.etProductPrice.text.toString().toDoubleOrNull() ?: 0.0
-            val isManufactured = binding.chkManufactured.isChecked
+    private fun setupUI() {
+        // RadioGroup Listener
+        binding.rgType.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                binding.rbInsumo.id -> {
+                    binding.etPrice.isEnabled = false
+                    binding.etPrice.setText("0.0")
+                    binding.layoutRecipe.visibility = View.GONE
+                }
+                binding.rbSimple.id -> {
+                    binding.etPrice.isEnabled = true
+                    binding.layoutRecipe.visibility = View.GONE
+                }
+                binding.rbManufacturado.id -> {
+                    binding.etPrice.isEnabled = true
+                    binding.layoutRecipe.visibility = View.VISIBLE
+                    viewModel.loadInsumos() // Recargar lista
+                }
+            }
+        }
+
+        // Agregar Ingrediente
+        binding.btnAddIngredient.setOnClickListener {
+            val qty = binding.etIngredientQty.text.toString().toDoubleOrNull() ?: 0.0
+            if (selectedIngredientId != -1 && qty > 0) {
+                viewModel.addIngredient(selectedIngredientId, qty)
+                binding.etIngredientQty.setText("")
+            }
+        }
+
+        // Guardar
+        binding.btnSave.setOnClickListener {
+            val name = binding.etName.text.toString()
+            val price = binding.etPrice.text.toString().toDoubleOrNull() ?: 0.0
             
-            viewModel.saveProduct(name, price, isManufactured)
-            clearFields()
+            val type = when (binding.rgType.checkedRadioButtonId) {
+                binding.rbInsumo.id -> ProductType.INSUMO
+                binding.rbSimple.id -> ProductType.PRODUCTO_SIMPLE
+                binding.rbManufacturado.id -> ProductType.MANUFACTURADO
+                else -> null
+            }
+
+            if (type != null) {
+                viewModel.saveProduct(name, price, type)
+                clearFields()
+            } else {
+                Toast.makeText(this, "Seleccione un tipo", Toast.LENGTH_SHORT).show()
+            }
         }
         
         binding.btnCancelEdit.setOnClickListener {
@@ -47,90 +94,78 @@ class InventoryActivity : AppCompatActivity() {
             clearFields()
         }
 
-        // ✅ NUEVO: Botón Eliminar
-        binding.btnDelete.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("¿ELIMINAR PRODUCTO?")
-                .setMessage("Esta acción no se puede deshacer.")
-                .setPositiveButton("ELIMINAR") { _, _ ->
-                    viewModel.deleteProduct()
-                    clearFields()
-                }
-                .setNegativeButton("CANCELAR", null)
-                .show()
-        }
-
-        // ✅ NUEVO: Botón Merma
-        binding.btnMerma.setOnClickListener {
-            showMermaDialog()
-        }
-
-        binding.btnOpenPurchase.setOnClickListener {
-            startActivity(Intent(this, PurchaseActivity::class.java))
-        }
-    }
-
-    private fun showMermaDialog() {
-        val input = EditText(this)
-        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-        input.hint = "CANTIDAD A DESCARTAR"
-
-        AlertDialog.Builder(this)
-            .setTitle("REGISTRAR MERMA")
-            .setMessage("Ingrese la cantidad dañada/vencida:")
-            .setView(input)
-            .setPositiveButton("CONFIRMAR") { _, _ ->
-                val qty = input.text.toString().toDoubleOrNull() ?: 0.0
-                if (qty > 0) {
-                    viewModel.registerMerma(qty, "Daño Manual")
-                    clearFields()
-                }
-            }
-            .setNegativeButton("CANCELAR", null)
-            .show()
-    }
-
-    private fun setupRecyclerView() {
+        // RecyclerView
         adapter = ProductAdapter(
             onEditClick = { product ->
-                viewModel.selectProductForEdit(product)
-                binding.etProductName.setText(product.name)
-                binding.etProductPrice.setText(product.salePrice.toString())
-                binding.chkManufactured.isChecked = product.isManufactured
+                viewModel.prepareEdit(product)
+                binding.etName.setText(product.name)
+                binding.etPrice.setText(product.salePrice.toString())
                 
-                binding.btnSaveProduct.text = "ACTUALIZAR PRODUCTO"
+                when(product.type) {
+                    ProductType.INSUMO -> binding.rbInsumo.isChecked = true
+                    ProductType.PRODUCTO_SIMPLE -> binding.rbSimple.isChecked = true
+                    ProductType.MANUFACTURADO -> binding.rbManufacturado.isChecked = true
+                }
+                
+                binding.btnSave.text = "ACTUALIZAR"
                 binding.btnCancelEdit.visibility = View.VISIBLE
-                binding.layoutEditActions.visibility = View.VISIBLE // Mostrar botones peligrosos
             },
             stockProvider = { id -> 
-                var stock = 0.0
-                runBlocking { stock = viewModel.getStockForProduct(id) }
-                stock
+                var s = 0.0
+                runBlocking { s = viewModel.getStock(id) }
+                s
             }
         )
-        
         binding.rvProducts.layoutManager = LinearLayoutManager(this)
         binding.rvProducts.adapter = adapter
     }
 
     private fun clearFields() {
-        binding.etProductName.setText("")
-        binding.etProductPrice.setText("")
-        binding.chkManufactured.isChecked = false
-        
-        binding.btnSaveProduct.text = "GUARDAR PRODUCTO"
+        binding.etName.setText("")
+        binding.etPrice.setText("")
+        binding.rgType.clearCheck()
+        binding.layoutRecipe.visibility = View.GONE
+        binding.btnSave.text = "GUARDAR PRODUCTO"
         binding.btnCancelEdit.visibility = View.GONE
-        binding.layoutEditActions.visibility = View.GONE // Ocultar botones peligrosos
     }
 
     private fun setupObservers() {
-        viewModel.statusMessage.observe(this) { msg ->
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        viewModel.statusMessage.observe(this) { 
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show() 
         }
 
         lifecycleScope.launch {
-            viewModel.allProducts.collect { products ->
-                adapter.submitList(products)
+            viewModel.allProducts.collect { adapter.submitList(it) }
+        }
+        
+        // Cargar Spinner Insumos
+        viewModel.insumosList.observe(this) { list ->
+            insumosList = list
+            val names = list.map { it.name }
+            val spinAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, names)
+            spinAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            binding.spIngredients.adapter = spinAdapter
+            
+            binding.spIngredients.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, pos: Int, p3: Long) {
+                    selectedIngredientId = list[pos].id
+                }
+                override fun onNothingSelected(p0: AdapterView<*>?) {}
+            }
+        }
+        
+        // Mostrar Receta Temporal
+        viewModel.tempRecipe.observe(this) { map ->
+            if (map.isEmpty()) {
+                binding.txtRecipeList.text = "Sin ingredientes."
+            } else {
+                val sb = StringBuilder()
+                map.forEach { (id, qty) ->
+                    // Buscar nombre (lento pero funcional para UI pequeña)
+                    val name = insumosList.find { it.id == id }?.name ?: "ID:$id"
+                    sb.append("- $name x $qty\n")
+                }
+                binding.txtRecipeList.text = sb.toString()
             }
         }
     }
