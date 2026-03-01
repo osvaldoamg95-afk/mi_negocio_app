@@ -4,249 +4,98 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.tunegocio.app.data.AppDatabase
-import com.tunegocio.app.data.entities.Sale
-import com.tunegocio.app.data.entities.SaleDetail
 import com.tunegocio.app.databinding.ActivitySalesBinding
-import java.util.Calendar
+import com.tunegocio.app.viewmodel.SalesViewModel
+import kotlinx.coroutines.launch
 
 class SalesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySalesBinding
-    private lateinit var db: AppDatabase
+    private val viewModel: SalesViewModel by viewModels() // ✅ ViewModel inyectado
+    private lateinit var db: AppDatabase // Solo para cargar productos en UI
 
     private var selectedProductId: Int = -1
     private var selectedProductPrice: Double = 0.0
     private var selectedProductName: String = ""
 
-    data class CartItem(
-        val productId: Int,
-        val productName: String,
-        val quantity: Double,
-        val price: Double
-    )
-
-    private val cart = mutableListOf<CartItem>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivitySalesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         db = AppDatabase.getDatabase(this)
 
         loadProducts()
+        setupObservers()
 
         binding.btnAddToCart.setOnClickListener {
-
-            val quantity = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
-
-            if (selectedProductId != -1 && quantity > 0) {
-
-                cart.add(
-                    CartItem(
-                        productId = selectedProductId,
-                        productName = selectedProductName,
-                        quantity = quantity,
-                        price = selectedProductPrice
-                    )
-                )
-
-                binding.txtStatus.text = "🛒 $selectedProductName agregado"
+            val qty = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
+            if (selectedProductId != -1 && qty > 0) {
+                viewModel.addToCart(selectedProductId, selectedProductName, qty, selectedProductPrice)
                 binding.etQuantity.setText("")
-                updateCartView()
             }
         }
 
         binding.btnClearCart.setOnClickListener {
-            cart.clear()
-            updateCartView()
-            binding.txtStatus.text = "Carrito vaciado"
+            viewModel.clearCart()
         }
 
         binding.btnSell.setOnClickListener {
+            viewModel.processSale()
+        }
+    }
 
-            lifecycleScope.launch {
-
-                try {
-
-                    if (cart.isEmpty()) {
-                        binding.txtStatus.text = "Carrito vacío"
-                        return@launch
-                    }
-
-                    val calendar = Calendar.getInstance()
-                    calendar.set(Calendar.HOUR_OF_DAY, 0)
-                    calendar.set(Calendar.MINUTE, 0)
-                    calendar.set(Calendar.SECOND, 0)
-                    calendar.set(Calendar.MILLISECOND, 0)
-
-                    val startDay = calendar.timeInMillis
-                    calendar.add(Calendar.DAY_OF_MONTH, 1)
-                    val endDay = calendar.timeInMillis
-
-                    val isClosed = db.dailyCloseDao()
-                        .isClosed(startDay, endDay)
-
-                    if (isClosed > 0) {
-                        throw Exception("El día está cerrado")
-                    }
-
-                    for (item in cart) {
-
-                        val stock = db.inventoryLotDao()
-                            .getTotalStock(item.productId) ?: 0.0
-
-                        if (stock < item.quantity) {
-                            throw Exception("Stock insuficiente en ${item.productName}")
-                        }
-                    }
-
-                    var totalVenta = 0.0
-                    var totalCost = 0.0
-
-                    for (item in cart) {
-                        val cost = sellFIFO(item.productId, item.quantity)
-                        totalCost += cost
-                        totalVenta += item.quantity * item.price
-                    }
-
-                    val profit = totalVenta - totalCost
-
-                    val saleId = db.saleDao().insertSale(
-                        Sale(
-                            date = System.currentTimeMillis(),
-                            total = totalVenta,
-                            costTotal = totalCost,
-                            profit = profit
-                        )
-                    )
-
-                    for (item in cart) {
-                        db.saleDao().insertSaleDetail(
-                            SaleDetail(
-                                saleId = saleId.toInt(),
-                                productId = item.productId,
-                                quantity = item.quantity,
-                                salePrice = item.price
-                            )
-                        )
-                    }
-
-                    cart.clear()
-                    updateCartView()
-
-                    binding.txtStatus.text =
-                        "✅ Venta completa | Ganancia: %.2f"
-                            .format(profit)
-
-                } catch (e: Exception) {
-                    binding.txtStatus.text = "❌ ${e.message}"
+    private fun setupObservers() {
+        // Observar cambios en el carrito
+        viewModel.cart.observe(this) { items ->
+            if (items.isEmpty()) {
+                binding.txtCart.text = "Carrito vacío"
+            } else {
+                val sb = StringBuilder("🛒 CARRITO:\n\n")
+                items.forEachIndexed { i, item ->
+                    sb.append("${i + 1}. ${item.productName} x ${item.quantity}\n")
                 }
+                binding.txtCart.text = sb.toString()
+            }
+        }
+
+        // Observar mensajes de estado
+        viewModel.statusMessage.observe(this) { msg ->
+            binding.txtStatus.text = msg
+            // Opcional: Mostrar Toast si es error grave
+            if (msg.startsWith("❌")) {
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun updateCartView() {
-
-        if (cart.isEmpty()) {
-            binding.txtCart.text = "Carrito vacío"
-            return
-        }
-
-        var text = "🛒 CARRITO:\n\n"
-
-        for ((index, item) in cart.withIndex()) {
-            text += "${index + 1}. ${item.productName} x ${item.quantity}\n"
-        }
-
-        binding.txtCart.text = text
-    }
-
     private fun loadProducts() {
-
         lifecycleScope.launch {
-
             val products = db.productDao().getAllList()
-
             if (products.isNotEmpty()) {
-
                 val adapter = ArrayAdapter(
                     this@SalesActivity,
                     android.R.layout.simple_spinner_item,
                     products.map { it.name }
                 )
-
-                adapter.setDropDownViewResource(
-                    android.R.layout.simple_spinner_dropdown_item
-                )
-
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 binding.spProducts.adapter = adapter
 
-                binding.spProducts.onItemSelectedListener =
-                    object : AdapterView.OnItemSelectedListener {
-
-                        override fun onItemSelected(
-                            parent: AdapterView<*>?,
-                            view: View?,
-                            position: Int,
-                            id: Long
-                        ) {
-                            val selected = products[position]
-                            selectedProductId = selected.id
-                            selectedProductPrice = selected.salePrice
-                            selectedProductName = selected.name
-                        }
-
-                        override fun onNothingSelected(parent: AdapterView<*>?) {}
+                binding.spProducts.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val p = products[position]
+                        selectedProductId = p.id
+                        selectedProductPrice = p.salePrice
+                        selectedProductName = p.name
                     }
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
             }
         }
-    }
-
-    private suspend fun sellFIFO(
-        productId: Int,
-        quantityToSell: Double
-    ): Double {
-
-        var remaining = quantityToSell
-        var totalCost = 0.0
-
-        val lots = db.inventoryLotDao().getLotsFIFO(productId)
-
-        for (lot in lots) {
-
-            if (remaining <= 0) break
-
-            if (lot.quantity <= remaining) {
-
-                totalCost += lot.quantity * lot.purchasePrice
-                remaining -= lot.quantity
-
-                db.inventoryLotDao().updateLot(
-                    lot.copy(quantity = 0.0)
-                )
-
-            } else {
-
-                totalCost += remaining * lot.purchasePrice
-
-                db.inventoryLotDao().updateLot(
-                    lot.copy(quantity = lot.quantity - remaining)
-                )
-
-                remaining = 0.0
-            }
-        }
-
-        if (remaining > 0) {
-            throw Exception("Stock insuficiente")
-        }
-
-        return totalCost
     }
 }
