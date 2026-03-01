@@ -31,6 +31,9 @@ interface InventoryLotDao {
     """)
     suspend fun getInventoryValue(): Double?
 
+    @Query("SELECT * FROM inventory_lots")
+    suspend fun getAllLots(): List<InventoryLot>
+
     // ✅ Actualizar lote (cuando se descuenta)
     @Update
     suspend fun updateLot(lot: InventoryLot)
