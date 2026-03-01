@@ -51,6 +51,10 @@
 <activity
     android:name=".ui.ExportActivity"
     android:exported="false"/>
+
+<activity
+    android:name=".ui.BackupActivity"
+    android:exported="false"/>
         
     </application>
 
