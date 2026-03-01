@@ -33,7 +33,7 @@ import com.tunegocio.app.data.dao.RecipeDao
         RawMaterial::class,
         Recipe::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
