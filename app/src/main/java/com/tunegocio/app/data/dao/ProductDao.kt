@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ProductDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE) // Si ya existe ID, actualiza
     suspend fun insert(product: Product)
 
     @Update
@@ -17,11 +17,15 @@ interface ProductDao {
     suspend fun delete(product: Product)
 
     @Query("SELECT * FROM products ORDER BY name ASC")
-    fun getAll(): Flow<List<Product>>
+    fun getAll(): Flow<List<Product>> // Para observar cambios en vivo
 
     @Query("SELECT * FROM products ORDER BY name ASC")
-    suspend fun getAllList(): List<Product>
+    suspend fun getAllList(): List<Product> // Para spinners y lógica
 
     @Query("SELECT * FROM products WHERE id = :id")
     suspend fun getById(id: Int): Product
+
+    // ✅ Búsqueda para futuro buscador (LIKE)
+    @Query("SELECT * FROM products WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun searchProducts(query: String): List<Product>
 }
