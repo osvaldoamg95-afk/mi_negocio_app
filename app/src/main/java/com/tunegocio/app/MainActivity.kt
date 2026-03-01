@@ -2,21 +2,19 @@ package com.tunegocio.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.databinding.ActivityMainBinding
-import com.tunegocio.app.ui.InventoryActivity
-import com.tunegocio.app.ui.SalesActivity
-import com.tunegocio.app.ui.ReportsActivity
-import com.tunegocio.app.ui.ExpenseActivity
-import com.tunegocio.app.ui.RawMaterialActivity
-import com.tunegocio.app.ui.RecipeActivity
-import com.tunegocio.app.ui.HistoryActivity
-import com.tunegocio.app.ui.ExportActivity
-import com.tunegocio.app.ui.BackupActivity
+import com.tunegocio.app.ui.*
+import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,43 +22,85 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Ir a Inventario
-        binding.btnInventario.setOnClickListener {
-            startActivity(Intent(this, InventoryActivity::class.java))
-        }
+        db = AppDatabase.getDatabase(this)
 
-        // Ir a Ventas
+        setupButtons()
+        updateDashboard()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDashboard() // ✅ Actualiza datos al volver de otra pantalla
+    }
+
+    private fun setupButtons() {
         binding.btnVentas.setOnClickListener {
             startActivity(Intent(this, SalesActivity::class.java))
         }
 
-        // Ir a Reportes
-        binding.btnReportes.setOnClickListener {
-            startActivity(Intent(this, ReportsActivity::class.java))
+        binding.btnInventario.setOnClickListener {
+            startActivity(Intent(this, InventoryActivity::class.java))
+        }
+
+        // ⚠️ OJO: Necesitas agregar btnOpenPurchase al XML de MainActivity
+        // Como pusimos en el XML nuevo un botón para compras:
+        binding.btnOpenPurchase.setOnClickListener {
+            startActivity(Intent(this, PurchaseActivity::class.java))
         }
 
         binding.btnGastos.setOnClickListener {
             startActivity(Intent(this, ExpenseActivity::class.java))
         }
 
-        binding.btnMaterias.setOnClickListener {
-            startActivity(Intent(this, RawMaterialActivity::class.java))
+        binding.btnReportes.setOnClickListener {
+            startActivity(Intent(this, ReportsActivity::class.java))
+        }
+
+        binding.btnCloseDay.setOnClickListener {
+            startActivity(Intent(this, CloseDayActivity::class.java))
         }
 
         binding.btnRecetas.setOnClickListener {
             startActivity(Intent(this, RecipeActivity::class.java))
         }
 
-        binding.btnHistorial.setOnClickListener {
-            startActivity(Intent(this, HistoryActivity::class.java))
+        binding.btnMaterias.setOnClickListener {
+            startActivity(Intent(this, RawMaterialActivity::class.java))
         }
 
-        binding.btnExportar.setOnClickListener {
-            startActivity(Intent(this, ExportActivity::class.java))
+        // ✅ Herramientas agrupa Backup, Export y Import
+        // Por ahora redirigimos a BackupActivity, luego podemos crear un ToolsActivity
+        binding.btnTools.setOnClickListener {
+             startActivity(Intent(this, BackupActivity::class.java))
         }
+    }
 
-        binding.btnBackup.setOnClickListener {
-            startActivity(Intent(this, BackupActivity::class.java))
+    private fun updateDashboard() {
+        lifecycleScope.launch {
+            // 1. Obtener inicio del día
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val startOfDay = calendar.timeInMillis
+
+            // 2. Consultar BD
+            val salesToday = db.saleDao().getTodaySales(startOfDay) ?: 0.0
+            val profitToday = db.saleDao().getTodayProfit(startOfDay) ?: 0.0
+            val lowStockCount = db.inventoryLotDao().countLowStockProducts() ?: 0
+
+            // 3. Actualizar UI
+            binding.txtTodaySales.text = "$ %.2f".format(salesToday)
+            binding.txtTodayProfit.text = "$ %.2f".format(profitToday)
+
+            if (lowStockCount > 0) {
+                binding.txtAlertStock.text = "⚠️ Atención: $lowStockCount productos con stock bajo"
+                binding.txtAlertStock.setTextColor(Color.RED)
+            } else {
+                binding.txtAlertStock.text = "✅ Inventario saludable"
+                binding.txtAlertStock.setTextColor(Color.parseColor("#2E7D32"))
+            }
         }
     }
 }
