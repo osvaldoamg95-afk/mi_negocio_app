@@ -1,5 +1,6 @@
 package com.tunegocio.app.ui
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -12,12 +13,13 @@ import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.databinding.ActivitySalesBinding
 import com.tunegocio.app.viewmodel.SalesViewModel
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class SalesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySalesBinding
-    private val viewModel: SalesViewModel by viewModels() // ✅ ViewModel inyectado
-    private lateinit var db: AppDatabase // Solo para cargar productos en UI
+    private val viewModel: SalesViewModel by viewModels()
+    private lateinit var db: AppDatabase
 
     private var selectedProductId: Int = -1
     private var selectedProductPrice: Double = 0.0
@@ -32,6 +34,17 @@ class SalesActivity : AppCompatActivity() {
 
         loadProducts()
         setupObservers()
+        updateDateButton() // Mostrar fecha inicial
+
+        // ✅ Selector de Fecha
+        binding.btnDate.setOnClickListener {
+            val c = viewModel.saleDate
+            val dpd = DatePickerDialog(this, { _, year, month, day ->
+                viewModel.setDate(year, month, day)
+                updateDateButton()
+            }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH))
+            dpd.show()
+        }
 
         binding.btnAddToCart.setOnClickListener {
             val qty = binding.etQuantity.text.toString().toDoubleOrNull() ?: 0.0
@@ -50,27 +63,35 @@ class SalesActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateDateButton() {
+        binding.btnDate.text = "📅 ${viewModel.getDateString()}"
+    }
+
     private fun setupObservers() {
-        // Observar cambios en el carrito
         viewModel.cart.observe(this) { items ->
             if (items.isEmpty()) {
-                binding.txtCart.text = "Carrito vacío"
+                binding.txtCart.text = "El carrito está vacío."
             } else {
-                val sb = StringBuilder("🛒 CARRITO:\n\n")
+                val sb = StringBuilder()
                 items.forEachIndexed { i, item ->
-                    sb.append("${i + 1}. ${item.productName} x ${item.quantity}\n")
+                    val sub = item.quantity * item.price
+                    sb.append("${i + 1}. ${item.productName}\n   ${item.quantity} x $${item.price} = $${String.format("%.2f", sub)}\n\n")
                 }
                 binding.txtCart.text = sb.toString()
             }
         }
 
-        // Observar mensajes de estado
+        viewModel.totalAmount.observe(this) { total ->
+            binding.txtTotal.text = "$ %.2f".format(total)
+        }
+
         viewModel.statusMessage.observe(this) { msg ->
             binding.txtStatus.text = msg
-            // Opcional: Mostrar Toast si es error grave
-            if (msg.startsWith("❌")) {
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            if (msg.startsWith("❌") || msg.startsWith("✅")) {
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             }
+            // Si la venta fue exitosa, resetear fecha visualmente
+            if (msg.startsWith("✅")) updateDateButton()
         }
     }
 
