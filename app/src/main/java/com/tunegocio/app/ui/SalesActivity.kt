@@ -9,8 +9,10 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.databinding.ActivitySalesBinding
+import com.tunegocio.app.ui.adapters.CartAdapter
 import com.tunegocio.app.viewmodel.SalesViewModel
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -20,6 +22,7 @@ class SalesActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySalesBinding
     private val viewModel: SalesViewModel by viewModels()
     private lateinit var db: AppDatabase
+    private lateinit var cartAdapter: CartAdapter // ✅ Adaptador
 
     private var selectedProductId: Int = -1
     private var selectedProductPrice: Double = 0.0
@@ -32,11 +35,11 @@ class SalesActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
+        setupRecyclerView() // ✅ Configurar lista
         loadProducts()
         setupObservers()
-        updateDateButton() // Mostrar fecha inicial
+        updateDateButton()
 
-        // ✅ Selector de Fecha
         binding.btnDate.setOnClickListener {
             val c = viewModel.saleDate
             val dpd = DatePickerDialog(this, { _, year, month, day ->
@@ -63,22 +66,23 @@ class SalesActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupRecyclerView() {
+        cartAdapter = CartAdapter(
+            onDeleteClick = { item ->
+                viewModel.removeFromCart(item) // ✅ Acción eliminar
+            }
+        )
+        binding.rvCart.layoutManager = LinearLayoutManager(this)
+        binding.rvCart.adapter = cartAdapter
+    }
+
     private fun updateDateButton() {
         binding.btnDate.text = "📅 ${viewModel.getDateString()}"
     }
 
     private fun setupObservers() {
         viewModel.cart.observe(this) { items ->
-            if (items.isEmpty()) {
-                binding.txtCart.text = "El carrito está vacío."
-            } else {
-                val sb = StringBuilder()
-                items.forEachIndexed { i, item ->
-                    val sub = item.quantity * item.price
-                    sb.append("${i + 1}. ${item.productName}\n   ${item.quantity} x $${item.price} = $${String.format("%.2f", sub)}\n\n")
-                }
-                binding.txtCart.text = sb.toString()
-            }
+            cartAdapter.submitList(items.toList()) // ✅ Actualizar lista visual
         }
 
         viewModel.totalAmount.observe(this) { total ->
@@ -90,7 +94,6 @@ class SalesActivity : AppCompatActivity() {
             if (msg.startsWith("❌") || msg.startsWith("✅")) {
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             }
-            // Si la venta fue exitosa, resetear fecha visualmente
             if (msg.startsWith("✅")) updateDateButton()
         }
     }
