@@ -24,5 +24,21 @@ class BackupActivity : AppCompatActivity() {
             val result = BackupHelper.restoreDatabase(this)
             binding.txtStatus.text = result
         }
+
+        // ... código existente ...
+
+        binding.btnTemplate.setOnClickListener {
+            lifecycleScope.launch {
+                val path = ImportHelper.generateTemplate()
+                binding.txtStatus.text = "📄 Plantilla guardada en:\n$path\n\nEdítala con Excel y luego presiona Importar."
+            }
+        }
+
+        binding.btnImport.setOnClickListener {
+            lifecycleScope.launch {
+                val result = ImportHelper.importData(this@BackupActivity, db) // Necesitas instanciar db aquí si no lo tienes
+                binding.txtStatus.text = result
+            }
+        }
     }
 }
