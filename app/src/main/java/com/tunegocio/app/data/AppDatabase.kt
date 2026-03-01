@@ -4,38 +4,26 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
-import com.tunegocio.app.data.entities.Product
-import com.tunegocio.app.data.entities.InventoryLot
-import com.tunegocio.app.data.entities.Sale
-import com.tunegocio.app.data.entities.SaleDetail
-import com.tunegocio.app.data.entities.Expense
-import com.tunegocio.app.data.entities.DailyClose
-import com.tunegocio.app.data.entities.RawMaterial
-import com.tunegocio.app.data.entities.Recipe
-
-import com.tunegocio.app.data.dao.ProductDao
-import com.tunegocio.app.data.dao.InventoryLotDao
-import com.tunegocio.app.data.dao.SaleDao
-import com.tunegocio.app.data.dao.ExpenseDao
-import com.tunegocio.app.data.dao.DailyCloseDao
-import com.tunegocio.app.data.dao.RawMaterialDao
-import com.tunegocio.app.data.dao.RecipeDao
+import com.tunegocio.app.data.entities.*
+import com.tunegocio.app.data.dao.*
+import com.tunegocio.app.data.utils.Converters // Crearemos esto
 
 @Database(
     entities = [
         Product::class,
+        ProductIngredient::class, // ✅ Nueva
         InventoryLot::class,
         Sale::class,
         SaleDetail::class,
         Expense::class,
-        DailyClose::class,
-        RawMaterial::class,
-        Recipe::class
+        DailyClose::class
     ],
-    version = 7,
+    version = 8, // 🔥 Subimos versión por cambio estructural masivo
     exportSchema = false
 )
+@TypeConverters(Converters::class) // ✅ Para el Enum ProductType
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun productDao(): ProductDao
@@ -43,26 +31,20 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun saleDao(): SaleDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun dailyCloseDao(): DailyCloseDao
-    abstract fun rawMaterialDao(): RawMaterialDao
-    abstract fun recipeDao(): RecipeDao
 
     companion object {
-
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
-
             return INSTANCE ?: synchronized(this) {
-
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "mi_negocio_db"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration() // Borrón y cuenta nueva necesario
                 .build()
-
                 INSTANCE = instance
                 instance
             }
