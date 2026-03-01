@@ -2,53 +2,37 @@ package com.tunegocio.app.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import com.tunegocio.app.data.AppDatabase
-import com.tunegocio.app.data.entities.Product
 import com.tunegocio.app.databinding.ActivityInventoryBinding
+import com.tunegocio.app.viewmodel.InventoryViewModel
+import kotlinx.coroutines.launch
 
 class InventoryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityInventoryBinding
-    private lateinit var db: AppDatabase
+    private val viewModel: InventoryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityInventoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        db = AppDatabase.getDatabase(this)
-
-        loadProducts()
+        setupObservers()
 
         binding.btnSaveProduct.setOnClickListener {
-
             val name = binding.etProductName.text.toString()
             val price = binding.etProductPrice.text.toString().toDoubleOrNull() ?: 0.0
             val isManufactured = binding.chkManufactured.isChecked
-
-            if (name.isNotEmpty()) {
-
-                lifecycleScope.launch {
-
-                    db.productDao().insert(
-                        Product(
-                            name = name,
-                            salePrice = price,
-                            isManufactured = isManufactured
-                        )
-                    )
-
-                    binding.etProductName.setText("")
-                    binding.etProductPrice.setText("")
-                    binding.chkManufactured.isChecked = false
-
-                    loadProducts()
-                }
-            }
+            
+            viewModel.createProduct(name, price, isManufactured)
+            
+            // Limpiar campos
+            binding.etProductName.setText("")
+            binding.etProductPrice.setText("")
+            binding.chkManufactured.isChecked = false
         }
 
         binding.btnOpenPurchase.setOnClickListener {
@@ -56,28 +40,21 @@ class InventoryActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadProducts() {
+    private fun setupObservers() {
+        viewModel.statusMessage.observe(this) { msg ->
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        }
 
+        // Observar la lista de productos en tiempo real
         lifecycleScope.launch {
-
-            db.productDao().getAll().collect { products ->
-
-                var text = "PRODUCTOS:\n\n"
-
+            viewModel.allProducts.collect { products ->
+                val sb = StringBuilder("PRODUCTOS:\n\n")
                 for (p in products) {
-
-                    val stock = db.inventoryLotDao()
-                        .getTotalStock(p.id) ?: 0.0
-
-                    val type = if (p.isManufactured)
-                        " (Manufacturado)"
-                    else
-                        ""
-
-                    text += "${p.name}$type | Precio: ${p.salePrice} | Stock: $stock\n"
+                    val stock = viewModel.getStockForProduct(p.id) // Consultamos stock
+                    val type = if (p.isManufactured) " (Manufacturado)" else ""
+                    sb.append("${p.name}$type | Precio: ${p.salePrice} | Stock: $stock\n")
                 }
-
-                binding.txtProductList.text = text
+                binding.txtProductList.text = sb.toString()
             }
         }
     }
