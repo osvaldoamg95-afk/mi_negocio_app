@@ -12,6 +12,7 @@ import com.tunegocio.app.ui.RawMaterialActivity
 import com.tunegocio.app.ui.RecipeActivity
 import com.tunegocio.app.ui.HistoryActivity
 import com.tunegocio.app.ui.ExportActivity
+import com.tunegocio.app.ui.BackupActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,6 +57,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnExportar.setOnClickListener {
             startActivity(Intent(this, ExportActivity::class.java))
+        }
+
+        binding.btnBackup.setOnClickListener {
+            startActivity(Intent(this, BackupActivity::class.java))
         }
     }
 }
