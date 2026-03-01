@@ -11,6 +11,7 @@ import com.tunegocio.app.ui.ExpenseActivity
 import com.tunegocio.app.ui.RawMaterialActivity
 import com.tunegocio.app.ui.RecipeActivity
 import com.tunegocio.app.ui.HistoryActivity
+import com.tunegocio.app.ui.ExportActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -51,6 +52,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnHistorial.setOnClickListener {
             startActivity(Intent(this, HistoryActivity::class.java))
+        }
+
+        binding.btnExportar.setOnClickListener {
+            startActivity(Intent(this, ExportActivity::class.java))
         }
     }
 }
