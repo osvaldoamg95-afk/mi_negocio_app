@@ -1,17 +1,18 @@
 package com.tunegocio.app.data.entities
 
 import androidx.room.Entity
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(
-    tableName = "products",
-    indices = [Index(value = ["name"])] // Búsqueda rápida por nombre
-)
+@Entity(tableName = "products")
 data class Product(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String,
     val salePrice: Double,
-    val isManufactured: Boolean = false
+    val type: ProductType // INSUMO o VENTA
 )
+
+enum class ProductType {
+    INSUMO, // Solo compra/inventario (no sale en ventas)
+    VENTA   // Sale en ventas (puede ser simple o compuesto)
+}
