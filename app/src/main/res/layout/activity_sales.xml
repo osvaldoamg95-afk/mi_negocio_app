@@ -57,10 +57,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
+            <!-- ✅ CORREGIDO: Color de texto negro -->
             <EditText
                 android:id="@+id/etQuantity"
                 android:hint="CANTIDAD"
                 android:inputType="numberDecimal"
+                android:textColor="#000000"
+                android:textColorHint="#666666"
                 android:background="@android:drawable/edit_text"
                 android:padding="12dp"
                 android:layout_weight="1"
@@ -76,7 +79,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- LISTA DEL CARRITO (SCROLL) -->
+    <!-- LISTA DEL CARRITO (RECYCLERVIEW PARA BORRAR ITEM POR ITEM) -->
     <androidx.cardview.widget.CardView
         android:layout_margin="16dp"
         android:layout_weight="1"
@@ -84,19 +87,12 @@
         android:layout_height="0dp"
         app:cardCornerRadius="8dp">
 
-        <ScrollView
+        <!-- ✅ CAMBIO: RecyclerView para control total -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvCart"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"/>
             
-            <TextView
-                android:id="@+id/txtCart"
-                android:padding="16dp"
-                android:text="El carrito está vacío."
-                android:textSize="16sp"
-                android:lineSpacingExtra="4dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-        </ScrollView>
     </androidx.cardview.widget.CardView>
 
     <!-- TOTAL Y ACCIONES -->
@@ -138,7 +134,7 @@
 
             <Button
                 android:id="@+id/btnClearCart"
-                android:text="CANCELAR"
+                android:text="CANCELAR TODO"
                 android:backgroundTint="#D32F2F"
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp"
