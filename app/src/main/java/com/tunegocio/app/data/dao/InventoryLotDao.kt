@@ -34,6 +34,13 @@ interface InventoryLotDao {
     @Query("SELECT * FROM inventory_lots")
     suspend fun getAllLots(): List<InventoryLot>
 
+    @Query("""
+    SELECT COUNT(*) FROM inventory_lots 
+    GROUP BY productId 
+    HAVING SUM(quantity) < 5
+    """)
+    suspend fun countLowStockProducts(): Int?
+
     // ✅ Actualizar lote (cuando se descuenta)
     @Update
     suspend fun updateLot(lot: InventoryLot)
