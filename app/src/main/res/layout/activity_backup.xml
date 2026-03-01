@@ -17,6 +17,21 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/btnTemplate"
+        android:text="1. Descargar Plantilla Importación"
+        android:backgroundTint="#0288D1"
+        android:layout_marginTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnImport"
+        android:text="2. Importar Datos (CSV)"
+        android:backgroundTint="#43A047"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
     <TextView
         android:id="@+id/txtStatus"
         android:paddingTop="16dp"
