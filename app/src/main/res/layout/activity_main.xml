@@ -53,6 +53,12 @@
         android:text="Exportar Datos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnBackup"
+        android:text="Backup / Restaurar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
     
     <TextView
         android:id="@+id/txtResultado"
