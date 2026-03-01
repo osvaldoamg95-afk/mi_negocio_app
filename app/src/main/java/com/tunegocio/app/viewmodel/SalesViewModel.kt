@@ -34,12 +34,10 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private val _statusMessage = MutableLiveData<String>()
     val statusMessage: LiveData<String> = _statusMessage
 
-    // ✅ Fecha de Venta (Por defecto Hoy)
     var saleDate: Calendar = Calendar.getInstance()
 
     fun setDate(year: Int, month: Int, day: Int) {
         saleDate.set(year, month, day)
-        // Reset hora
         saleDate.set(Calendar.HOUR_OF_DAY, 12) 
         saleDate.set(Calendar.MINUTE, 0)
     }
@@ -49,11 +47,24 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
         return sdf.format(saleDate.time)
     }
 
+    // ✅ NUEVO: Agregar con validación
     fun addToCart(productId: Int, productName: String, quantity: Double, price: Double) {
+        // Validar si es materia prima (no vendible sola)
+        // Necesitamos saber el tipo. Como en el spinner tenemos el nombre, 
+        // haremos la validación fuerte al procesar o idealmente al cargar productos (filtrar).
+        
         val currentList = _cart.value.orEmpty().toMutableList()
         currentList.add(CartItem(productId, productName, quantity, price))
         updateCart(currentList)
         _statusMessage.value = "🛒 $productName agregado"
+    }
+
+    // ✅ NUEVO: Eliminar ítem individual
+    fun removeFromCart(item: CartItem) {
+        val currentList = _cart.value.orEmpty().toMutableList()
+        currentList.remove(item)
+        updateCart(currentList)
+        _statusMessage.value = "🗑️ Producto eliminado"
     }
 
     fun clearCart() {
@@ -75,13 +86,10 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                // 1. Validar Cierre Diario en la fecha seleccionada
-                if (isDayClosed(saleDate.timeInMillis)) {
-                    throw Exception("El día seleccionado ya está cerrado administrativamente")
-                }
-
+                // 1. Validar Stock (Lógica corregida para Manufactura)
                 validateStock(currentCart)
 
+                // 2. Procesar Venta
                 var totalVenta = 0.0
                 var totalCost = 0.0
                 val details = mutableListOf<SaleDetail>()
@@ -104,7 +112,7 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
                 val profit = totalVenta - totalCost
 
                 val sale = Sale(
-                    date = saleDate.timeInMillis, // ✅ Usamos la fecha elegida
+                    date = saleDate.timeInMillis,
                     total = totalVenta,
                     costTotal = totalCost,
                     profit = profit
@@ -113,7 +121,6 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
                 db.saleDao().insertFullSale(sale, details)
 
                 clearCart()
-                // Reset fecha a hoy después de vender
                 saleDate = Calendar.getInstance() 
                 _statusMessage.value = "✅ Venta registrada el ${getDateString()}"
 
@@ -123,38 +130,34 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun isDayClosed(dateMillis: Long): Boolean {
-        val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        
-        val start = calendar.timeInMillis
-        calendar.add(Calendar.DAY_OF_MONTH, 1)
-        val end = calendar.timeInMillis
-        
-        return db.dailyCloseDao().isClosed(start, end) > 0
-    }
-
     private suspend fun validateStock(cartItems: List<CartItem>) {
         for (item in cartItems) {
-            // Verificar manufactura
             val product = db.productDao().getById(item.productId)
+            
+            // REGLA: No vender Materia Prima sola (si tuviéramos campo isRawMaterial en Product, 
+            // pero como usas tablas separadas, Product siempre es vendible. 
+            // Si RawMaterial es otra tabla, no aparecerá en el Spinner de productos, así que está seguro).
+
             if (product.isManufactured) {
+                 // ✅ Lógica de Manufactura: Validar INSUMOS, no el producto
                  val recipe = db.recipeDao().getRecipeForProduct(item.productId)
-                 if (recipe.isEmpty()) throw Exception("Producto ${product.name} sin receta")
+                 if (recipe.isEmpty()) throw Exception("Producto ${product.name} es manufacturado pero NO TIENE RECETA")
                  
                  for (ing in recipe) {
                      val stock = db.inventoryLotDao().getTotalStock(ing.rawMaterialId) ?: 0.0
-                     if (stock < (ing.quantityRequired * item.quantity)) {
-                         throw Exception("Falta insumo para ${product.name}")
+                     val needed = ing.quantityRequired * item.quantity
+                     
+                     // Buscar nombre del insumo para mensaje claro
+                     // (Aquí simplificamos mensaje, idealmente query extra)
+                     if (stock < needed) {
+                         throw Exception("Falta insumo (ID: ${ing.rawMaterialId}) para ${product.name}")
                      }
                  }
             } else {
+                // Producto normal: Validar su propio stock
                 val stock = db.inventoryLotDao().getTotalStock(item.productId) ?: 0.0
                 if (stock < item.quantity) {
-                    throw Exception("Stock insuficiente en ${item.productName}")
+                    throw Exception("Stock insuficiente en ${item.productName} (Disponible: $stock)")
                 }
             }
         }
