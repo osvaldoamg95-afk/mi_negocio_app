@@ -9,37 +9,61 @@ import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.data.entities.Sale
 import com.tunegocio.app.data.entities.SaleDetail
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.*
 
 class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = AppDatabase.getDatabase(application)
 
-    // Estado del carrito
     data class CartItem(
         val productId: Int,
         val productName: String,
         val quantity: Double,
         val price: Double
-    )
+    ) {
+        val subtotal: Double get() = quantity * price
+    }
 
     private val _cart = MutableLiveData<List<CartItem>>(emptyList())
     val cart: LiveData<List<CartItem>> = _cart
 
-    // Mensajes para la UI
+    private val _totalAmount = MutableLiveData<Double>(0.0)
+    val totalAmount: LiveData<Double> = _totalAmount
+
     private val _statusMessage = MutableLiveData<String>()
     val statusMessage: LiveData<String> = _statusMessage
+
+    // ✅ Fecha de Venta (Por defecto Hoy)
+    var saleDate: Calendar = Calendar.getInstance()
+
+    fun setDate(year: Int, month: Int, day: Int) {
+        saleDate.set(year, month, day)
+        // Reset hora
+        saleDate.set(Calendar.HOUR_OF_DAY, 12) 
+        saleDate.set(Calendar.MINUTE, 0)
+    }
+    
+    fun getDateString(): String {
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return sdf.format(saleDate.time)
+    }
 
     fun addToCart(productId: Int, productName: String, quantity: Double, price: Double) {
         val currentList = _cart.value.orEmpty().toMutableList()
         currentList.add(CartItem(productId, productName, quantity, price))
-        _cart.value = currentList
+        updateCart(currentList)
         _statusMessage.value = "🛒 $productName agregado"
     }
 
     fun clearCart() {
-        _cart.value = emptyList()
+        updateCart(emptyList())
         _statusMessage.value = "Carrito vaciado"
+    }
+
+    private fun updateCart(items: List<CartItem>) {
+        _cart.value = items
+        _totalAmount.value = items.sumOf { it.subtotal }
     }
 
     fun processSale() {
@@ -51,15 +75,13 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                // 1. Validar Cierre Diario
-                if (isDayClosed()) {
-                    throw Exception("El día está cerrado")
+                // 1. Validar Cierre Diario en la fecha seleccionada
+                if (isDayClosed(saleDate.timeInMillis)) {
+                    throw Exception("El día seleccionado ya está cerrado administrativamente")
                 }
 
-                // 2. Validar Stock Inicial
                 validateStock(currentCart)
 
-                // 3. Calcular Costos y Descontar FIFO
                 var totalVenta = 0.0
                 var totalCost = 0.0
                 val details = mutableListOf<SaleDetail>()
@@ -71,7 +93,7 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
                     details.add(
                         SaleDetail(
-                            saleId = 0, // Se asigna al insertar
+                            saleId = 0,
                             productId = item.productId,
                             quantity = item.quantity,
                             salePrice = item.price
@@ -81,9 +103,8 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
 
                 val profit = totalVenta - totalCost
 
-                // 4. Guardar Venta Transaccional
                 val sale = Sale(
-                    date = System.currentTimeMillis(),
+                    date = saleDate.timeInMillis, // ✅ Usamos la fecha elegida
                     total = totalVenta,
                     costTotal = totalCost,
                     profit = profit
@@ -92,7 +113,9 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
                 db.saleDao().insertFullSale(sale, details)
 
                 clearCart()
-                _statusMessage.value = "✅ Venta completa | Ganancia: %.2f".format(profit)
+                // Reset fecha a hoy después de vender
+                saleDate = Calendar.getInstance() 
+                _statusMessage.value = "✅ Venta registrada el ${getDateString()}"
 
             } catch (e: Exception) {
                 _statusMessage.value = "❌ ${e.message}"
@@ -100,37 +123,49 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun isDayClosed(): Boolean {
-        val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
+    private suspend fun isDayClosed(dateMillis: Long): Boolean {
+        val calendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        
         val start = calendar.timeInMillis
         calendar.add(Calendar.DAY_OF_MONTH, 1)
         val end = calendar.timeInMillis
+        
         return db.dailyCloseDao().isClosed(start, end) > 0
     }
 
     private suspend fun validateStock(cartItems: List<CartItem>) {
         for (item in cartItems) {
-            val stock = db.inventoryLotDao().getTotalStock(item.productId) ?: 0.0
-            if (stock < item.quantity) {
-                throw Exception("Stock insuficiente en ${item.productName}")
+            // Verificar manufactura
+            val product = db.productDao().getById(item.productId)
+            if (product.isManufactured) {
+                 val recipe = db.recipeDao().getRecipeForProduct(item.productId)
+                 if (recipe.isEmpty()) throw Exception("Producto ${product.name} sin receta")
+                 
+                 for (ing in recipe) {
+                     val stock = db.inventoryLotDao().getTotalStock(ing.rawMaterialId) ?: 0.0
+                     if (stock < (ing.quantityRequired * item.quantity)) {
+                         throw Exception("Falta insumo para ${product.name}")
+                     }
+                 }
+            } else {
+                val stock = db.inventoryLotDao().getTotalStock(item.productId) ?: 0.0
+                if (stock < item.quantity) {
+                    throw Exception("Stock insuficiente en ${item.productName}")
+                }
             }
         }
     }
 
-    // Lógica FIFO + Manufactura
     private suspend fun calculateFIFOAndReduceStock(productId: Int, qty: Double): Double {
         val product = db.productDao().getById(productId)
         var cost = 0.0
 
         if (product.isManufactured) {
             val recipe = db.recipeDao().getRecipeForProduct(productId)
-            if (recipe.isEmpty()) throw Exception("Producto manufacturado sin receta")
-
             for (ingredient in recipe) {
                 val requiredQty = ingredient.quantityRequired * qty
                 cost += reduceStockFIFO(ingredient.rawMaterialId, requiredQty)
@@ -144,25 +179,15 @@ class SalesViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun reduceStockFIFO(itemId: Int, qtyRequired: Double): Double {
         var remaining = qtyRequired
         var cost = 0.0
-        
-        // Obtenemos solo lotes con stock > 0
         val lots = db.inventoryLotDao().getLotsFIFO(itemId) 
 
         for (lot in lots) {
             if (remaining <= 0) break
-
             val take = if (lot.quantity >= remaining) remaining else lot.quantity
-            
             cost += take * lot.purchasePrice
-            
             val newQty = lot.quantity - take
             db.inventoryLotDao().updateLot(lot.copy(quantity = newQty))
-            
             remaining -= take
-        }
-
-        if (remaining > 0.001) { // Margen de error flotante
-            throw Exception("Insumo insuficiente (ID: $itemId)")
         }
         return cost
     }
