@@ -28,4 +28,7 @@ interface ProductDao {
     // ✅ Búsqueda para futuro buscador (LIKE)
     @Query("SELECT * FROM products WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
     suspend fun searchProducts(query: String): List<Product>
+
+    @Query("SELECT * FROM products WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): Product?
 }
