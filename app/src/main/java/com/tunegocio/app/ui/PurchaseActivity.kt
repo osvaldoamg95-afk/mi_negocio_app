@@ -8,8 +8,10 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.databinding.ActivityPurchaseBinding
+import com.tunegocio.app.ui.adapters.PurchaseAdapter
 import com.tunegocio.app.viewmodel.PurchaseViewModel
 import kotlinx.coroutines.launch
 
@@ -17,7 +19,8 @@ class PurchaseActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPurchaseBinding
     private val viewModel: PurchaseViewModel by viewModels()
-    private lateinit var db: AppDatabase // Solo para cargar productos UI
+    private lateinit var db: AppDatabase
+    private lateinit var adapter: PurchaseAdapter
 
     private var selectedProductId: Int = -1
     private var selectedProductName: String = ""
@@ -29,6 +32,7 @@ class PurchaseActivity : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
+        setupRecyclerView()
         loadProducts()
         setupObservers()
 
@@ -48,22 +52,25 @@ class PurchaseActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupRecyclerView() {
+        adapter = PurchaseAdapter { item ->
+            viewModel.removeFromCart(item)
+        }
+        binding.rvPurchaseCart.layoutManager = LinearLayoutManager(this)
+        binding.rvPurchaseCart.adapter = adapter
+    }
+
     private fun setupObservers() {
         viewModel.cart.observe(this) { items ->
-            if (items.isEmpty()) {
-                binding.txtPurchaseCart.text = "Carrito vacío"
-            } else {
-                val sb = StringBuilder("📦 COMPRAS:\n\n")
-                items.forEachIndexed { i, item ->
-                    sb.append("${i + 1}. ${item.productName} x ${item.quantity} ($${item.price})\n")
-                }
-                binding.txtPurchaseCart.text = sb.toString()
-            }
+            adapter.submitList(items.toList())
+        }
+
+        viewModel.totalAmount.observe(this) { total ->
+            binding.txtTotalPurchase.text = "$ %.2f".format(total)
         }
 
         viewModel.statusMessage.observe(this) { msg ->
-            binding.txtStatus.text = msg
-            if (msg.startsWith("❌")) Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
