@@ -53,6 +53,34 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- BOTONES DE ACCIÓN PELIGROSA (Visibles solo al editar) -->
+         <LinearLayout
+                android:id="@+id/layoutEditActions"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:layout_marginTop="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/btnMerma"
+                android:text="REGISTRAR MERMA"
+                android:backgroundTint="#FF9800"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+
+             <Button
+                 android:id="@+id/btnDelete"
+                 android:text="ELIMINAR"
+                 android:backgroundTint="#D32F2F"
+                 android:layout_weight="1"
+                 android:layout_marginStart="4dp"
+                 android:layout_width="0dp"
+                 android:layout_height="wrap_content"/>
+         </LinearLayout>
+
     <Button
         android:id="@+id/btnOpenPurchase"
         android:text="REGISTRAR COMPRA (ENTRADA)"
