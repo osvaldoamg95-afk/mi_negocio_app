@@ -29,8 +29,8 @@ interface ProductDao {
     @Query("SELECT * FROM products ORDER BY name ASC")
     fun getAllFlow(): Flow<List<Product>>
 
-    // ✅ Solo productos de VENTA para la pantalla de Ventas
-    @Query("SELECT * FROM products WHERE type = 'VENTA' ORDER BY name ASC")
+     // ✅ Solo productos de VENTA (Simple o Manufacturado)
+    @Query("SELECT * FROM products WHERE type IN ('PRODUCTO_SIMPLE', 'MANUFACTURADO') ORDER BY name ASC")
     suspend fun getProductsForSale(): List<Product>
 
     // ✅ Todos los productos (para Compras e Inventario)
