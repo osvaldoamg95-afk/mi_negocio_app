@@ -5,6 +5,7 @@ import android.os.Environment
 import com.tunegocio.app.data.AppDatabase
 import com.tunegocio.app.data.entities.InventoryLot
 import com.tunegocio.app.data.entities.Product
+import com.tunegocio.app.data.entities.ProductType // ✅
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
@@ -16,28 +17,22 @@ object ImportHelper {
 
     private const val FILE_NAME = "PLANTILLA_IMPORTAR.csv"
 
-    // ✅ PASO 1: Generar Plantilla para que el usuario rellene
     suspend fun generateTemplate(): String {
         return withContext(Dispatchers.IO) {
             val file = createFile(FILE_NAME)
             val writer = FileWriter(file)
 
-            // Encabezados claros
-            writer.append("NOMBRE_PRODUCTO,PRECIO_VENTA,ES_MANUFACTURADO(SI/NO),STOCK_INICIAL,COSTO_UNITARIO\n")
-            
-            // Ejemplos
-            writer.append("COCA COLA 600ML,1.50,NO,24,0.80\n")
-            writer.append("HAMBURGUESA ESPECIAL,5.00,SI,0,0\n")
-            writer.append("PAN DE HAMBURGUESA,0.00,NO,100,0.20\n")
+            writer.append("NOMBRE_PRODUCTO,PRECIO_VENTA,TIPO(INSUMO/SIMPLE/MANUFACTURADO),STOCK_INICIAL,COSTO_UNITARIO\n")
+            writer.append("COCA COLA 600ML,1.50,SIMPLE,24,0.80\n")
+            writer.append("HAMBURGUESA ESPECIAL,5.00,MANUFACTURADO,0,0\n")
+            writer.append("PAN DE HAMBURGUESA,0.00,INSUMO,100,0.20\n")
             
             writer.flush()
             writer.close()
-            
             file.absolutePath
         }
     }
 
-    // ✅ PASO 2: Importar Productos e Inventario
     suspend fun importData(context: Context, db: AppDatabase): String {
         return withContext(Dispatchers.IO) {
             val file = File(
@@ -52,7 +47,7 @@ object ImportHelper {
             var count = 0
             var errors = 0
 
-            reader.readLine() // Saltar encabezado
+            reader.readLine() 
 
             while (reader.readLine().also { line = it } != null) {
                 try {
@@ -60,24 +55,25 @@ object ImportHelper {
                     if (parts.size >= 5) {
                         val name = parts[0].uppercase().trim()
                         val price = parts[1].toDoubleOrNull() ?: 0.0
-                        val isManuf = parts[2].trim().equals("SI", ignoreCase = true)
+                        
+                        // ✅ Convertir String a Enum
+                        val typeStr = parts[2].trim().uppercase()
+                        val type = when {
+                            typeStr.contains("MANUF") -> ProductType.MANUFACTURADO
+                            typeStr.contains("INSUMO") -> ProductType.INSUMO
+                            else -> ProductType.PRODUCTO_SIMPLE
+                        }
+
                         val stock = parts[3].toDoubleOrNull() ?: 0.0
                         val cost = parts[4].toDoubleOrNull() ?: 0.0
 
                         if (name.isNotEmpty()) {
-                            // 1. Crear Producto
                             db.productDao().insert(
-                                Product(name = name, salePrice = price, isManufactured = isManuf)
+                                Product(name = name, salePrice = price, type = type) // ✅
                             )
 
-                            // 2. Si hay stock inicial, crear lote automáticamente
-                            if (stock > 0) {
-                                // Necesitamos el ID del producto recién creado.
-                                // Como Room es rápido, buscamos por nombre (ya que acabamos de insertar)
-                                // OJO: Idealmente el DAO insert debería devolver Long (ID), 
-                                // pero para no cambiar todo ahora, buscamos.
-                                val product = db.productDao().getByName(name) // Necesitamos agregar esto al DAO
-                                
+                            if (stock > 0 && type != ProductType.MANUFACTURADO) {
+                                val product = db.productDao().getByName(name)
                                 if (product != null) {
                                     db.inventoryLotDao().insert(
                                         InventoryLot(
@@ -97,7 +93,7 @@ object ImportHelper {
                 }
             }
             reader.close()
-            "✅ Importación completa: $count productos cargados. ($errors errores)"
+            "✅ Importación completa: $count cargados. ($errors errores)"
         }
     }
 
