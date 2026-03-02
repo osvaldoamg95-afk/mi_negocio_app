@@ -100,26 +100,34 @@ class SalesActivity : AppCompatActivity() {
 
     private fun loadProducts() {
         lifecycleScope.launch {
-            val products = db.productDao().getAllList()
-            if (products.isNotEmpty()) {
+            // ✅ USAR CONSULTA FILTRADA (Solo vendibles)
+            // Necesitas agregar getProductsForSale() en tu DAO si no existe
+            // O filtrar en memoria si son pocos:
+            val allProducts = db.productDao().getAllList()
+            val sellableProducts = allProducts.filter { it.type != ProductType.INSUMO }
+
+            if (sellableProducts.isNotEmpty()) {
                 val adapter = ArrayAdapter(
                     this@SalesActivity,
-                    android.R.layout.simple_spinner_item,
-                    products.map { it.name }
+                    android.R.layout.simple_dropdown_item_1line, // Layout para autocomplete
+                    sellableProducts.map { it.name }
                 )
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                binding.spProducts.adapter = adapter
+                
+                binding.acProducts.setAdapter(adapter)
 
-                binding.spProducts.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        val p = products[position]
-                        selectedProductId = p.id
-                        selectedProductPrice = p.salePrice
-                        selectedProductName = p.name
+                binding.acProducts.setOnItemClickListener { parent, _, position, _ ->
+                    val name = parent.getItemAtPosition(position) as String
+                    val selected = sellableProducts.find { it.name == name }
+                    
+                    if (selected != null) {
+                        selectedProductId = selected.id
+                        selectedProductPrice = selected.salePrice
+                        selectedProductName = selected.name
+                        
+                        // Opcional: Auto-focus en cantidad
+                        binding.etQuantity.requestFocus()
                     }
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
                 }
             }
         }
     }
-}
