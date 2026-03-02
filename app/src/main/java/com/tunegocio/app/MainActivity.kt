@@ -18,7 +18,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -30,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateDashboard() // ✅ Actualiza datos al volver de otra pantalla
+        updateDashboard()
     }
 
     private fun setupButtons() {
@@ -42,8 +41,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, InventoryActivity::class.java))
         }
 
-        // ⚠️ OJO: Necesitas agregar btnOpenPurchase al XML de MainActivity
-        // Como pusimos en el XML nuevo un botón para compras:
         binding.btnOpenPurchase.setOnClickListener {
             startActivity(Intent(this, PurchaseActivity::class.java))
         }
@@ -60,16 +57,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, CloseDayActivity::class.java))
         }
 
-        binding.btnRecetas.setOnClickListener {
-            startActivity(Intent(this, RecipeActivity::class.java))
-        }
+        // ✅ Eliminamos botones viejos de Recetas y Materias Primas
+        // (Ahora se gestionan dentro de Inventario)
 
-        binding.btnMaterias.setOnClickListener {
-            startActivity(Intent(this, RawMaterialActivity::class.java))
-        }
-
-        // ✅ Herramientas agrupa Backup, Export y Import
-        // Por ahora redirigimos a BackupActivity, luego podemos crear un ToolsActivity
         binding.btnTools.setOnClickListener {
              startActivity(Intent(this, BackupActivity::class.java))
         }
@@ -77,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateDashboard() {
         lifecycleScope.launch {
-            // 1. Obtener inicio del día
             val calendar = Calendar.getInstance()
             calendar.set(Calendar.HOUR_OF_DAY, 0)
             calendar.set(Calendar.MINUTE, 0)
@@ -85,12 +74,10 @@ class MainActivity : AppCompatActivity() {
             calendar.set(Calendar.MILLISECOND, 0)
             val startOfDay = calendar.timeInMillis
 
-            // 2. Consultar BD
             val salesToday = db.saleDao().getTodaySales(startOfDay) ?: 0.0
             val profitToday = db.saleDao().getTodayProfit(startOfDay) ?: 0.0
             val lowStockCount = db.inventoryLotDao().countLowStockProducts() ?: 0
 
-            // 3. Actualizar UI
             binding.txtTodaySales.text = "$ %.2f".format(salesToday)
             binding.txtTodayProfit.text = "$ %.2f".format(profitToday)
 
