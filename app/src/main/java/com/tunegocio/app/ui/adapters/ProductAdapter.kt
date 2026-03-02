@@ -6,11 +6,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.tunegocio.app.data.entities.Product
+import com.tunegocio.app.data.entities.ProductType // ✅ IMPORTANTE
 import com.tunegocio.app.databinding.ItemProductBinding
 
 class ProductAdapter(
     private val onEditClick: (Product) -> Unit,
-    private val stockProvider: (Int) -> Double // Función para pedir el stock
+    private val stockProvider: (Int) -> Double
 ) : ListAdapter<Product, ProductAdapter.ProductViewHolder>(DiffCallback) {
 
     inner class ProductViewHolder(private val binding: ItemProductBinding) :
@@ -19,11 +20,15 @@ class ProductAdapter(
         fun bind(product: Product) {
             binding.txtName.text = product.name
             
+            val stock = stockProvider(product.id)
+            
+            // ✅ CORREGIDO: Usar el Enum ProductType
             val typeStr = when(product.type) {
                 ProductType.INSUMO -> "🔵 INSUMO"
                 ProductType.PRODUCTO_SIMPLE -> "🟢 SIMPLE"
                 ProductType.MANUFACTURADO -> "🟠 MANUFACTURA"
             }
+            
             binding.txtDetails.text = "$typeStr | Stock: $stock | $${product.salePrice}"
 
             binding.btnEdit.setOnClickListener {
