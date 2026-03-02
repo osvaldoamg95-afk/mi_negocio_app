@@ -62,7 +62,6 @@ object ExportHelper {
             val file = createFile("INVENTARIO_FISICO.csv")
             val writer = FileWriter(file)
             
-            // Encabezados Profesionales
             writer.append("ID,PRODUCTO,TIPO,COSTO_PROM,PRECIO_VENTA,STOCK_SISTEMA,STOCK_FISICO,DIFERENCIA\n")
 
             val products = db.productDao().getAllList()
@@ -70,7 +69,6 @@ object ExportHelper {
             for (p in products) {
                 val stock = db.inventoryLotDao().getTotalStock(p.id) ?: 0.0
                 
-                // Calculamos costo promedio ponderado si hay stock
                 val lots = db.inventoryLotDao().getLotsForProduct(p.id)
                 var totalCost = 0.0
                 var totalQty = 0.0
@@ -81,7 +79,9 @@ object ExportHelper {
                     }
                 }
                 val avgCost = if (totalQty > 0) totalCost / totalQty else 0.0
-                val type = if (p.isManufactured) "MANUF" else "INSUMO"
+                
+                // ✅ Usar p.type
+                val type = p.type.name 
 
                 writer.append(
                     "${p.id}," +
@@ -90,8 +90,8 @@ object ExportHelper {
                     "%.2f,".format(avgCost) +
                     "${p.salePrice}," +
                     "$stock," +
-                    "," + // Espacio vacío para conteo físico
-                    "\n"  // Espacio para anotar diferencia
+                    "," + 
+                    "\n"  
                 )
             }
 
